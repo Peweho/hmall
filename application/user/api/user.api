@@ -1,0 +1,42 @@
+syntax = "v1"
+
+//POST 用户登录接口
+type (
+	LoginReq {
+		Password   string `json:"password"`
+		RememberMe bool   `json:"rememberMe"`
+		UserName   string `json:"userName"`
+	}
+	LoginResp {
+		Balance  int    `json:"balance"`
+		Token    string `json:"token"`
+		UserId   int    `json:"userId"`
+		UserName string `json:"userName"`
+	}
+)
+
+@server (
+	prefix :/users
+)
+
+service user-api {
+	//POST 用户登录接口
+	@handler Login
+	post /login (LoginReq) returns (LoginResp)
+}
+
+type DeductMoneyReq {
+	Amount string `json:"amount"`
+	Pw     string `json:"pw"`
+}
+
+@server (
+	jwt : Auth
+	prefix :/users
+)
+
+service user-api {
+	//PUT 扣减余额
+	@handler DeductMoney
+	put /money/deduct (LoginReq) returns (LoginResp)
+}

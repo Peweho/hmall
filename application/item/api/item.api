@@ -1,0 +1,125 @@
+syntax = "v1"
+
+// 商品通用请求和响应
+type ItemReqAndResp {
+	Brand        string `json:"brand"`
+	Category     string `json:"category"`
+	CommentCount int    `json:"commentCount"`
+	Id           int    `json:"id"`
+	Image        string `json:"image"`
+	IsAD         bool   `json:"isAd"`
+	Name         string `json:"name"`
+	Price        int    `json:"price"`
+	Sold         int    `json:"sold"`
+	Spec         string `json:"spec"`
+	Status       int    `json:"status"`
+	Stock        int    `json:"stock"`
+}
+
+// GET 根据id批量查询商品
+type (
+	FindItemsByIdReq {
+		Ids []string `form:"ids"`
+	}
+
+	FindItemsByIdResp {
+		Data []ItemDTO `json:"data, optional"`
+	}
+
+	ItemDTO {
+		Brand        string `json:"brand"`
+		Category     string `json:"category"`
+		CommentCount int    `json:"commentCount"`
+		Id           int    `json:"id"`
+		Image        string `json:"image"`
+		IsAD         bool   `json:"isAd",gorm:"default:true;column:isAD"`
+		Name         string `json:"name"`
+		Price        int    `json:"price"`
+		Sold         int    `json:"sold"`
+		Spec         string `json:"spec"`
+		Status       int    `json:"status"`
+		Stock        int    `json:"stock"`
+	}
+)
+
+//GET 分页查询商品
+type (
+	QueryItemPageReq {
+		IsAsc    string `form:"isAsc, optional"`
+		PageNo   int    `form:"pageNo, optional"`
+		PageSize int    `form:"pageSize, optional"`
+		SortBy   string `form:"sortBy, optional"`
+	}
+	QueryItemPageResp {
+		List  []ItemDTO `json:"list"`
+		Pages int       `json:"pages"`
+		Total int       `json:"total"`
+	}
+)
+
+type UpdateItemStatusReq {
+	Id     int `path:"id"`
+	Status int `path:"status"`
+}
+
+//PUT 批量扣减库存
+type (
+	DeductItemsReq {
+		Order []OrderDetailDTO `json:"order"`
+	}
+	OrderDetailDTO {
+		ItemId int `json:"itemId"`
+		Num    int `json:"num"`
+	}
+)
+
+//GET 根据id查询商品
+type (
+	FindItemByIdReq {
+		Id int `path:"id"`
+	}
+)
+
+//DELETE 根据id删除商品
+type DelItemByIdReq {
+	Id int `path:"id"`
+}
+
+@server (
+	jwt: Auth
+	prefix :/items
+)
+
+service item-api {
+	//DELETE 根据id删除商品
+	@handler DelItemById
+	delete /:id (DeductItemsReq)
+
+	//GET 根据id查询商品
+	@handler FindItemById
+	get /:id (FindItemByIdReq) returns (ItemReqAndResp)
+
+	//PUT 批量扣减库存
+	@handler DeductItems
+	put /stock/deduct (DeductItemsReq)
+
+	//PUT 更新商品状态
+	@handler UpdateItemStatus
+	put /status/:id/:status (UpdateItemStatusReq)
+
+	////GET 分页查询商品
+	@handler QueryItemPage
+	get /page (QueryItemPageReq) returns (QueryItemPageResp)
+
+	//PUT 更新商品
+	@handler UpdateItem
+	put / (ItemReqAndResp)
+
+	//POST 新增商品
+	@handler Additem
+	post / (ItemReqAndResp)
+
+	// GET 根据id批量查询商品
+	@handler FindItemsById
+	get / (FindItemsByIdReq) returns (FindItemsByIdResp)
+}
