@@ -5,13 +5,13 @@ type (
 	LoginReq {
 		Password   string `json:"password"`
 		RememberMe bool   `json:"rememberMe"`
-		UserName   string `json:"userName"`
+		UserName   string `json:"username"`
 	}
 	LoginResp {
 		Balance  int    `json:"balance"`
 		Token    string `json:"token"`
 		UserId   int    `json:"userId"`
-		UserName string `json:"userName"`
+		UserName string `json:"username"`
 	}
 )
 
@@ -38,5 +38,5 @@ type DeductMoneyReq {
 service user-api {
 	//PUT 扣减余额
 	@handler DeductMoney
-	put /money/deduct (LoginReq) returns (LoginResp)
+	put /money/deduct (DeductMoneyReq)
 }

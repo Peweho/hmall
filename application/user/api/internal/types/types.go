@@ -4,17 +4,17 @@ package types
 type LoginReq struct {
 	Password   string `json:"password"`
 	RememberMe bool   `json:"rememberMe"`
-	UserName   string `json:"userName"`
+	UserName   string `json:"username"`
 }
 
 type LoginResp struct {
 	Balance  int    `json:"balance"`
 	Token    string `json:"token"`
 	UserId   int    `json:"userId"`
-	UserName string `json:"userName"`
+	UserName string `json:"username"`
 }
 
 type DeductMoneyReq struct {
-	Amount string `json:"amount"`
-	Pw     string `json:"pw"`
+	Amount string `form:"amount"`
+	Pw     string `form:"pw"`
 }
