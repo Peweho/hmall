@@ -1,3 +1,28 @@
 Name: item-api
 Host: 0.0.0.0
 Port: 8888
+
+Auth:
+  AccessSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  AccessExpire: 604800
+  RefreshSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  RefreshExpire: 2592000
+  RefreshAfter: 604800
+
+ItemRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: item.rpc
+  NonBlock: true
+
+DB:
+  DataSource: "root:123@tcp(192.168.92.201:3307)/hmall?parseTime=true&loc=Local&charset=utf8mb4"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node
