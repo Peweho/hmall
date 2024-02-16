@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package service;
+option go_package="./service";
+
+service Item {
+  rpc FindItemByIds(FindItemByIdsReq) returns (FindItemByIdsResp);
+}
+
+message FindItemByIdsReq {
+  repeated string ids = 1; // 商品id
+}
+
+message FindItemByIdsResp {
+    repeated Items data = 1;
+}
+
+message Items {
+    string brand = 1; // 商品品牌
+    string category = 2;
+    int64 commentCount = 3;
+    int64 id = 4;
+    string image = 5;
+    bool isAD = 6;
+    string name = 7;
+    int64 price = 8;
+    int64 sold = 9;
+    string spec  = 10;
+    int64 status = 11;
+    int64 stock = 12;
+}
