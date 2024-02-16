@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"fmt"
 	"hmall/application/item/rpc/item"
 	"hmall/pkg/xcode"
 
@@ -65,9 +64,4 @@ func ItemPRC_To_Item(item *item.Items) types.Item {
 		Status:       int(item.Status),
 		Stock:        int(item.Stock),
 	}
-}
-
-// 构造对应的缓存键
-func CacheIds(id string) string {
-	return fmt.Sprintf("%s#%s", types.CacheItemKey, id)
 }

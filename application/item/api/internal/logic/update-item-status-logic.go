@@ -2,11 +2,11 @@ package logic
 
 import (
 	"context"
-
+	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
+	"hmall/application/item/api/internal/util"
 )
 
 type UpdateItemStatusLogic struct {
@@ -24,7 +24,19 @@ func NewUpdateItemStatusLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *UpdateItemStatusLogic) UpdateItemStatus(req *types.UpdateItemStatusReq) error {
-	// todo: add your logic here and delete this line
 
+	//1、调用数据库
+	err := l.svcCtx.ItemModel.UpdateItemStatusById(l.ctx, req.Id, req.Status)
+	if err != nil {
+		logx.Errorf("ItemModel.UpdateItemStatusById: %v, error: %v", req.Id, err)
+		return err
+	}
+	//2、同步缓存
+	group := threading.NewWorkerGroup(func() {
+		_ = util.UpdateCache(l.ctx, l.svcCtx, req.Id)
+	}, 1)
+	group.Start()
+	//3、返回响应
 	return nil
+
 }

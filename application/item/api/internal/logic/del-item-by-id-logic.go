@@ -23,8 +23,11 @@ func NewDelItemByIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelIt
 	}
 }
 
-func (l *DelItemByIdLogic) DelItemById(req *types.DeductItemsReq) error {
-	// todo: add your logic here and delete this line
-
+func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
+	err := l.svcCtx.ItemModel.DelItemById(l.ctx, req.Id)
+	if err != nil {
+		logx.Errorf("ItemModel.DelItemById: %v,error: %v", req.Id, err)
+		return err
+	}
 	return nil
 }

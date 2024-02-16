@@ -93,7 +93,7 @@ type DelItemByIdReq {
 service item-api {
 	//DELETE 根据id删除商品
 	@handler DelItemById
-	delete /:id (DeductItemsReq)
+	delete /:id (DelItemByIdReq)
 
 	//GET 根据id查询商品
 	@handler FindItemById

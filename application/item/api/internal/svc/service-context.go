@@ -4,16 +4,18 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 	"hmall/application/item/api/internal/config"
+	"hmall/application/item/api/internal/model"
 	"hmall/application/item/rpc/item"
 	"hmall/pkg/interceptors"
 	"hmall/pkg/orm"
 )
 
 type ServiceContext struct {
-	Config   config.Config
-	ItemRPC  item.Item
-	BizRedis *redis.Redis
-	Db       *orm.DB
+	Config    config.Config
+	ItemRPC   item.Item
+	BizRedis  *redis.Redis
+	Db        *orm.DB
+	ItemModel *model.ItemModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -33,9 +35,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 	return &ServiceContext{
-		Config:   c,
-		ItemRPC:  item.NewItem(itemRPC),
-		BizRedis: rds,
-		Db:       db,
+		Config:    c,
+		ItemRPC:   item.NewItem(itemRPC),
+		BizRedis:  rds,
+		Db:        db,
+		ItemModel: model.NewItemModel(db.DB),
 	}
 }
