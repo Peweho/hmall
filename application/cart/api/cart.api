@@ -1,0 +1,75 @@
+syntax = "v1"
+
+type Resp {
+}
+
+//GET 查询购物车列表
+type (
+	QueryCartResp {
+		Items []ItemDTO `json:"items"`
+	}
+
+	ItemDTO {
+		CreateTime string `json:"createTime"`
+		Id         int    `json:"id"`
+		Image      string `json:"image"`
+		ItemId     int    `json:"itemId"`
+		Name       string `json:"name"`
+		NewPrice   int    `json:"newPrice"`
+		Num        int    `json:"num"`
+		Price      int    `json:"price"`
+		Spec       string `json:"spec"`
+		Status     int    `json:"status"`
+		Stock      int    `json:"stock"`
+	}
+)
+
+//POST 添加商品到购物车
+type AddCartReq {
+	Image   string `json:"image"`
+	ImageId int    `json:"imageId"`
+	Name    string `json:"name"`
+	Spec    string `json:"spec"`
+}
+
+//PUT 更新购物车数据
+type UpdateCartReq {
+	ItemDTO
+}
+
+//DELETE 批量删除购物车中商品
+type DelCartItemsReq {
+	Ids []string `json:"ids"`
+}
+
+//DELETE 批量删除购物车中商品
+type DelCartItemReq {
+	Id int `path:"id"`
+}
+
+@server (
+	jwt :Auth
+	prefix : /carts
+)
+
+service cart-api {
+	//DELETE 批量删除购物车中商品
+	@handler DelCartItem
+	delete /:id (DelCartItemReq)
+
+	//DELETE 批量删除购物车中商品
+	@handler DelCartItems
+	delete / (DelCartItemsReq)
+
+	//PUT 更新购物车数据
+	@handler UpdateCart
+	put / (UpdateCartReq)
+
+	//GET 查询购物车列表
+	@handler QueryCart
+	get / returns (QueryCartResp)
+
+	//POST 添加商品到购物车
+	@handler AddCart
+	post / (AddCartReq)
+}

@@ -1,0 +1,27 @@
+Name: cart-api
+Host: 0.0.0.0
+Port: 8884
+
+Auth:
+  AccessSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  AccessExpire: 604800
+  RefreshSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  RefreshExpire: 2592000
+  RefreshAfter: 604800
+
+ItemRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: item.rpc
+  NonBlock: true
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node
+
+KqPusherConf:
+  Brokers:
+    - 192.168.92.201:9092
+  Topic: topic-hmall-UpdateCache
