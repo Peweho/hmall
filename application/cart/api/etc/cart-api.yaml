@@ -24,4 +24,10 @@ BizRedis:
 KqPusherConf:
   Brokers:
     - 192.168.92.201:9092
-  Topic: topic-hmall-UpdateCache
+  Topic: topic-hmall-cart-UpdateCache
+
+DB:
+  DataSource: "root:123@tcp(192.168.92.201:3307)/hmall?parseTime=true&loc=Local&charset=utf8mb4"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600

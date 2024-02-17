@@ -16,7 +16,7 @@ type ServiceContext struct {
 	ItemRPC        item.Item
 	BizRedis       *redis.Redis
 	Db             *orm.DB
-	ItemModel      *model.CartModel
+	CartModel      *model.CartModel
 	KqPusherClient *kq.Pusher
 }
 
@@ -41,7 +41,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		ItemRPC:        item.NewItem(itemRPC),
 		BizRedis:       rds,
 		Db:             db,
-		ItemModel:      model.NewCartModel(db.DB),
+		CartModel:      model.NewCartModel(db.DB),
 		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
 	}
 }

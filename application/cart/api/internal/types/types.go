@@ -24,9 +24,11 @@ type ItemDTO struct {
 
 type AddCartReq struct {
 	Image   string `json:"image"`
-	ImageId int    `json:"imageId"`
+	ItemId int    `json:"itemId"`
 	Name    string `json:"name"`
 	Spec    string `json:"spec"`
+	Price   int    `json:"price"`
+	Num int `json:"num"`
 }
 
 type UpdateCartReq struct {
