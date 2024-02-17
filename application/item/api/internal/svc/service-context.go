@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 	"hmall/application/item/api/internal/config"
@@ -11,11 +12,12 @@ import (
 )
 
 type ServiceContext struct {
-	Config    config.Config
-	ItemRPC   item.Item
-	BizRedis  *redis.Redis
-	Db        *orm.DB
-	ItemModel *model.ItemModel
+	Config         config.Config
+	ItemRPC        item.Item
+	BizRedis       *redis.Redis
+	Db             *orm.DB
+	ItemModel      *model.ItemModel
+	KqPusherClient *kq.Pusher
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -35,10 +37,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 	return &ServiceContext{
-		Config:    c,
-		ItemRPC:   item.NewItem(itemRPC),
-		BizRedis:  rds,
-		Db:        db,
-		ItemModel: model.NewItemModel(db.DB),
+		Config:         c,
+		ItemRPC:        item.NewItem(itemRPC),
+		BizRedis:       rds,
+		Db:             db,
+		ItemModel:      model.NewItemModel(db.DB),
+		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
 	}
 }

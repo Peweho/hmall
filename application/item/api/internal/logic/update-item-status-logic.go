@@ -3,10 +3,10 @@ package logic
 import (
 	"context"
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
 	"hmall/application/item/api/internal/util"
+	"strconv"
 )
 
 type UpdateItemStatusLogic struct {
@@ -32,10 +32,16 @@ func (l *UpdateItemStatusLogic) UpdateItemStatus(req *types.UpdateItemStatusReq)
 		return err
 	}
 	//2、同步缓存
-	group := threading.NewWorkerGroup(func() {
-		_ = util.UpdateCache(l.ctx, l.svcCtx, req.Id)
-	}, 1)
-	group.Start()
+	pusherLogic := util.NewPusherLogic(l.ctx, l.svcCtx)
+	err = pusherLogic.Pusher(strconv.Itoa(req.Id))
+	if err != nil {
+		logx.Errorf("pusherLogic.Pusher: %v, error: %v", req.Id, err)
+		return err
+	}
+	//group := threading.NewWorkerGroup(func() {
+	//	_ = util.UpdateCache(l.ctx, l.svcCtx, req.Id)
+	//}, 1)
+	//group.Start()
 	//3、返回响应
 	return nil
 

@@ -6,6 +6,7 @@ import (
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
 	"hmall/application/item/api/internal/util"
+	"strconv"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -35,6 +36,9 @@ func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 		return nil
 	}
 
+	// 2、用于同步缓存的消息发送
+	pusherLogic := util.NewPusherLogic(l.ctx, l.svcCtx)
+
 	_, err := mr.MapReduce[Order, int, int](func(source chan<- Order) {
 		//解析参数
 		for _, val := range req.Order {
@@ -54,7 +58,7 @@ func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 	}, func(pipe <-chan int, writer mr.Writer[int], cancel func(error)) {
 		//3、同步缓存
 		for id := range pipe {
-			err := util.UpdateCache(l.ctx, l.svcCtx, id)
+			err := pusherLogic.Pusher(strconv.Itoa(id))
 			if err != nil {
 				cancel(err)
 			}

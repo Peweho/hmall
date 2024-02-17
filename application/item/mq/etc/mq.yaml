@@ -1,0 +1,26 @@
+Name: mq-api
+Host: 0.0.0.0
+Port: 8883
+
+#kq
+KqConsumerConf:
+  Name: kqConsumer
+  Brokers:
+    - 192.168.92.201:9092
+  Group: kqConsumer
+  Topic: topic-hmall-UpdateCache
+  Offset: last
+  Consumers: 1
+  Processors: 1
+
+ItemRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: item.rpc
+  NonBlock: true
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node
