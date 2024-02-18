@@ -1,6 +1,9 @@
 package types
 
-const CacheItemKey = "cache#item"
+const (
+	CacheCartKey  = "cache#cart"
+	CacheCartTime = 3600
+)
 
 // jwt 令牌关键字
 const (

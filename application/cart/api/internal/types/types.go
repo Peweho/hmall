@@ -9,7 +9,7 @@ type QueryCartResp struct {
 }
 
 type ItemDTO struct {
-	CreateTime string `json:"createTime"`
+	CreateTime string `json:"create_time"`
 	Id         int    `json:"id"`
 	Image      string `json:"image"`
 	ItemId     int    `json:"itemId"`

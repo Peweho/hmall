@@ -61,5 +61,5 @@ func (l *AddCartLogic) AddCart(req *types.AddCartReq) error {
 	}
 
 	//4、返回
-	return nil
+	return xcode.New(types.OK, "")
 }

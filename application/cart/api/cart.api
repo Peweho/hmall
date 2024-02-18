@@ -69,7 +69,7 @@ service cart-api {
 
 	//GET 查询购物车列表
 	@handler QueryCart
-	get / returns (QueryCartResp)
+	get / () returns (QueryCartResp)
 
 	//POST 添加商品到购物车
 	@handler AddCart

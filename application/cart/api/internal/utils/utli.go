@@ -7,6 +7,7 @@ import (
 	"hmall/application/cart/api/internal/svc"
 	"hmall/application/cart/api/internal/types"
 	"hmall/application/item/rpc/item"
+
 	"log"
 	"strconv"
 )
@@ -30,5 +31,5 @@ func UpdateCache(ctx context.Context, svcCtx *svc.ServiceContext, id int) error 
 
 // 构造对应的缓存键
 func CacheIds(id string) string {
-	return fmt.Sprintf("%s#%s", types.CacheItemKey, id)
+	return fmt.Sprintf("%s#%s", types.CacheCartKey, id)
 }
