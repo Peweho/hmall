@@ -10,7 +10,7 @@ type (
 	}
 
 	ItemDTO {
-		CreateTime string `json:"createTime"`
+		CreateTime string `json:"create_time"`
 		Id         int    `json:"id"`
 		Image      string `json:"image"`
 		ItemId     int    `json:"itemId"`
@@ -26,17 +26,26 @@ type (
 
 //POST 添加商品到购物车
 type AddCartReq {
-	Image   string `json:"image"`
+	Image  string `json:"image"`
 	ItemId int    `json:"itemId"`
-	Name    string `json:"name"`
-	Spec    string `json:"spec"`
-	Price   int    `json:"price"`
-	Num int `json:"num"`
+	Name   string `json:"name"`
+	Spec   string `json:"spec"`
+	Price  int    `json:"price"`
+	Num    int    `json:"num"`
 }
 
 //PUT 更新购物车数据
 type UpdateCartReq {
-	ItemDTO
+	CreateTime string `json:"createTime, optional"`
+	UpdateTime string `json:"updateTime, optional"`
+	Id         int    `json:"id"`
+	Image      string `json:"image, optional"`
+	ItemId     int    `json:"itemId"`
+	Name       string `json:"name, optional"`
+	Num        int    `json:"num"`
+	Price      int    `json:"price"`
+	Spec       string `json:"spec, optional"`
+	UserId     int    `json:"userId"`
 }
 
 //DELETE 批量删除购物车中商品
@@ -69,7 +78,7 @@ service cart-api {
 
 	//GET 查询购物车列表
 	@handler QueryCart
-	get / () returns (QueryCartResp)
+	get / returns (QueryCartResp)
 
 	//POST 添加商品到购物车
 	@handler AddCart

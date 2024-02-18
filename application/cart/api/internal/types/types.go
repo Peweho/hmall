@@ -23,16 +23,25 @@ type ItemDTO struct {
 }
 
 type AddCartReq struct {
-	Image   string `json:"image"`
+	Image  string `json:"image"`
 	ItemId int    `json:"itemId"`
-	Name    string `json:"name"`
-	Spec    string `json:"spec"`
-	Price   int    `json:"price"`
-	Num int `json:"num"`
+	Name   string `json:"name"`
+	Spec   string `json:"spec"`
+	Price  int    `json:"price"`
+	Num    int    `json:"num"`
 }
 
 type UpdateCartReq struct {
-	ItemDTO
+	CreateTime string `json:"createTime, optional"`
+	UpdateTime string `json:"updateTime, optional"`
+	Id         int    `json:"id"`
+	Image      string `json:"image, optional"`
+	ItemId     int    `json:"itemId"`
+	Name       string `json:"name, optional"`
+	Num        int    `json:"num"`
+	Price      int    `json:"price"`
+	Spec       string `json:"spec, optional"`
+	UserId     int    `json:"userId"`
 }
 
 type DelCartItemsReq struct {

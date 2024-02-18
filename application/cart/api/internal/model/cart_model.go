@@ -26,3 +26,18 @@ func (m *CartModel) QueryCatr(ctx context.Context, usr int) ([]CartPO, error) {
 	err := m.db.WithContext(ctx).Where("user_id = ?", usr).Find(&res).Error
 	return res, err
 }
+
+// 根据id删除
+func (m *CartModel) DelCartById(ctx context.Context, id int) error {
+	return m.db.WithContext(ctx).Where("id = ?", id).Delete(&CartPO{}).Error
+}
+
+// 根据id批量删除
+func (m *CartModel) DelCartsByIds(ctx context.Context, ids []string) error {
+	return m.db.WithContext(ctx).Where("id in ?", ids).Delete(&CartPO{}).Error
+}
+
+// 更新购物车
+func (m *CartModel) UpdateCart(ctx context.Context, po *CartPO) error {
+	return m.db.WithContext(ctx).Updates(po).Error
+}
