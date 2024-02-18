@@ -73,13 +73,13 @@ func (l *PaymentSuccess) Consume(_, str string) error {
 			Id:         msg.Data.Id,
 			Num:        msg.Data.Num,
 			ItemId:     msg.Data.ItemId,
-			Image:      msg.Data.Image,
+			Image:      itemData.Data[0].Image,
 			CreateTime: time.Now().Format("2006-01-02 15:04:05"),
-			Spec:       msg.Data.Spec,
+			Spec:       itemData.Data[0].Spec,
 			NewPrice:   int(itemData.Data[0].Price),
 			Status:     int(itemData.Data[0].Status),
 			Stock:      int(itemData.Data[0].Stock),
-			Name:       msg.Data.Name,
+			Name:       itemData.Data[0].Name,
 		}
 
 		//序列化
@@ -89,17 +89,12 @@ func (l *PaymentSuccess) Consume(_, str string) error {
 			return err
 		}
 		//增加缓存
-		if err = l.AddCache(key, string(marshal), time.Now().Unix()); err != nil {
+		if err = l.AddCache(key, string(marshal), strconv.Itoa(CartItem.Id)); err != nil {
 			logx.Errorf("AddCache: %v, error: %v", *msg, err)
 			return err
 		}
 	case types.MSgDelCache:
-		marshal, err := json.Marshal(msg.Data)
-		if err != nil {
-			logx.Errorf("json.Marshal: %v, error: %v", *msg.Data, err)
-			return err
-		}
-		if err = l.DelCache(key, string(marshal)); err != nil {
+		if err = l.DelCache(key, strconv.Itoa(msg.Data.Id)); err != nil {
 			logx.Errorf("DelCache: %v, error: %v", *msg, err)
 			return err
 		}
@@ -108,18 +103,22 @@ func (l *PaymentSuccess) Consume(_, str string) error {
 }
 
 // 添加缓存
-func (l *PaymentSuccess) AddCache(key, data string, score int64) error {
-	_, err := l.svcCtx.BizRedis.Zadd(key, score, data)
+func (l *PaymentSuccess) AddCache(key, data string, id string) error {
+	err := l.svcCtx.BizRedis.Hset(key, id, data)
 	if err != nil {
-		logx.Errorf("BizRedis.Zadd: %v, error: %v", key, err)
+		logx.Errorf("BizRedis.Hset: %v, error: %v", key, err)
+		return err
+	}
+	if err = l.svcCtx.BizRedis.Expire(key, types.CacheCartTime); err != nil {
+		logx.Errorf("BizRedis.Expire:%v, error: %v", key, err)
 		return err
 	}
 	return nil
 }
 
 // 删除缓存
-func (l *PaymentSuccess) DelCache(key, data string) error {
-	_, err := l.svcCtx.BizRedis.ZremCtx(l.ctx, key, data)
+func (l *PaymentSuccess) DelCache(key, id string) error {
+	_, err := l.svcCtx.BizRedis.Hdel(key, id)
 	if err != nil {
 		logx.Errorf("BizRedis.Zadd: %v, error: %v", key, err)
 		return err

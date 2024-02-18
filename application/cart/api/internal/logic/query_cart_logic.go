@@ -86,14 +86,14 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 		}
 		temp := types.ItemDTO{
 			Id:         catr[i].Id,
-			Image:      catr[i].Image,
+			Image:      val.Image,
 			ItemId:     itemId,
 			Name:       val.Name,
 			Price:      catr[i].Price,
 			NewPrice:   int(val.Price),
 			Num:        catr[i].Num,
 			Spec:       val.Spec,
-			CreateTime: time.Now().Format(time.DateTime),
+			CreateTime: catr[i].CreatedAt.Format(time.DateTime),
 			Status:     int(val.Status),
 			Stock:      int(val.Stock),
 		}
@@ -105,9 +105,9 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 				logx.Errorf("json.Marshal: %v, error: %v", temp, err)
 				return
 			}
-			_, err = l.svcCtx.BizRedis.Zadd(key, time.Now().Unix(), string(marshal))
+			err = l.svcCtx.BizRedis.Hset(key, strconv.Itoa(temp.Id), string(marshal))
 			if err != nil {
-				logx.Errorf("BizRedis.Zadd: %v, error: %v", string(marshal), err)
+				logx.Errorf("BizRedis.Hset: %v, error: %v", string(marshal), err)
 				return
 			}
 			wg.Done()
@@ -122,17 +122,17 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 
 // 查询缓存
 func (l *QueryCartLogic) QueryCache(key string) (resp *types.QueryCartResp, err error) {
-	num, _ := l.svcCtx.BizRedis.Zcard(key)
-	CartItems := make([]types.ItemDTO, 0, num)
-	redisPair, err := l.svcCtx.BizRedis.ZrangebyscoreWithScores(key, 0, time.Now().Unix())
+	redisData, err := l.svcCtx.BizRedis.Hgetall(key)
 	if err != nil {
 		logx.Errorf(":%v, error: %v", key, err)
 		return nil, err
 	}
-	for _, val := range redisPair {
+	num := len(redisData)
+	CartItems := make([]types.ItemDTO, 0, num)
+	for _, val := range redisData {
 		CartItem := types.ItemDTO{}
-		if err := json.Unmarshal([]byte(val.Key), &CartItem); err != nil {
-			logx.Errorf("json.Unmarshal:%v, error: %v", val.Key, err)
+		if err := json.Unmarshal([]byte(val), &CartItem); err != nil {
+			logx.Errorf("json.Unmarshal:%v, error: %v", val, err)
 			return nil, err
 		}
 		CartItems = append(CartItems, CartItem)

@@ -24,7 +24,6 @@ func NewDelCartItemLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelCa
 }
 
 func (l *DelCartItemLogic) DelCartItem(req *types.DelCartItemReq) error {
-	// todo: add your logic here and delete this line
-
+	//1、
 	return nil
 }
