@@ -1,0 +1,45 @@
+syntax = "v1"
+
+//GET 查询当前用户地址列表
+type (
+	QueryAddressesResp {
+		Addresses []QueryAddressesDTO `json:"addresses"`
+	}
+
+	QueryAddressesDTO {
+		City      string `json:"city"`
+		Contact   string `json:"contact"`
+		Id        int    `json:"id"`
+		IsDefault int    `json:"isDefault"`
+		Mobile    string `json:"mobile"`
+		Notes     string `json:"notes"`
+		Province  string `json:"province"`
+		Street    string `json:"street"`
+		Town      string `json:"town"`
+	}
+)
+
+//GET 根据id查询地址
+type (
+	FindAddressByIdReq {
+		AddressId int `path:"addressId"`
+	}
+
+	FindAddressByIdResp {
+		QueryAddressesDTO
+	}
+)
+@server(
+	jwt : Auth
+	prefix : /addresses
+)
+
+service address-api {
+	//GET 根据id查询地址
+	@handler FindAddressById
+	get /:addressId (FindAddressByIdReq) returns (FindAddressByIdResp)
+
+	//GET 查询当前用户地址列表
+	@handler QueryAddresses
+	get /  returns (QueryAddressesResp)
+}
