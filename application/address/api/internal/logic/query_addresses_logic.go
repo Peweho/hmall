@@ -45,7 +45,7 @@ func (l *QueryAddressesLogic) QueryAddresses() (resp *types.QueryAddressesResp, 
 			logx.Errorf("CacheFindAddressById, error: %v", err)
 			return nil, err
 		}
-		return &types.QueryAddressesResp{Addresses: addresses}, xcode.New(types.OK, "")
+		return &types.QueryAddressesResp{Addresses: addresses}, nil
 	}
 	//2、查询数据库
 	addresses, err := l.svcCtx.AddressModel.QueryAddresses(l.ctx, usr)
@@ -76,10 +76,11 @@ func (l *QueryAddressesLogic) QueryAddresses() (resp *types.QueryAddressesResp, 
 				logx.Errorf("BizRedis.Zadd: %v, error: %v", string(marshal), err)
 				return
 			}
+			_ = l.svcCtx.BizRedis.Expire(key, types.CacheAddressTime)
 		})
 	}
 	wg.Wait()
-	return &types.QueryAddressesResp{Addresses: addressesDTO}, xcode.New(types.OK, "")
+	return &types.QueryAddressesResp{Addresses: addressesDTO}, nil
 }
 
 // 查询缓存

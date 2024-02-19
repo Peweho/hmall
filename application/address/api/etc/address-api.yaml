@@ -19,3 +19,10 @@ DB:
   MaxIdleConns: 10
   MaxOpenConns: 100
   ConnMaxLifetime: 3600
+
+AddressRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: address.rpc
+  NonBlock: true

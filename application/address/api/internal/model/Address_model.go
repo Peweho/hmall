@@ -21,10 +21,3 @@ func (m *AddressModel) QueryAddresses(ctx context.Context, usr int) ([]AddressPO
 	err := m.db.WithContext(ctx).Where("user_id = ?", usr).Find(&res).Error
 	return res, err
 }
-
-// 根据ID查询地址
-func (m *AddressModel) QueryAddressFindById(ctx context.Context, id int) (AddressPO, error) {
-	var res AddressPO
-	err := m.db.WithContext(ctx).Where("id = ?", id).Find(&res).Error
-	return res, err
-}

@@ -2,11 +2,8 @@ package svc
 
 import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
-	"github.com/zeromicro/go-zero/zrpc"
-	"hmall/application/address/api/internal/config"
-	"hmall/application/address/api/internal/model"
-	"hmall/application/address/rpc/address"
-	"hmall/pkg/interceptors"
+	"hmall/application/address/rpc/internal/config"
+	"hmall/application/address/rpc/internal/model"
 	"hmall/pkg/orm"
 )
 
@@ -15,7 +12,6 @@ type ServiceContext struct {
 	BizRedis     *redis.Redis
 	Db           *orm.DB
 	AddressModel *model.AddressModel
-	AddressRPC   address.Address
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -33,12 +29,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MaxIdleConns: c.DB.MaxIdleConns,
 		MaxLifetime:  c.DB.MaxLifetime,
 	})
-	addressRPC := zrpc.MustNewClient(c.AddressRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
+
 	return &ServiceContext{
 		Config:       c,
 		BizRedis:     rds,
 		Db:           db,
 		AddressModel: model.NewAddressModel(db.DB),
-		AddressRPC:   address.NewAddress(addressRPC),
 	}
 }

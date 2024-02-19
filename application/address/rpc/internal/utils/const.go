@@ -1,7 +1,7 @@
-package types
+package utils
 
 const (
-	CacheAddressKey  = "cache#address#userId"
+	CacheAddressKey  = "cache#address#id"
 	CacheAddressTime = 3600
 )
 

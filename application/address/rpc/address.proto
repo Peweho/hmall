@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package service;
+option go_package="./service";
+
+service Address {
+  rpc FindAdressById(FindAdressByIdReq) returns (FindAdressByIdResp);
+}
+
+message FindAdressByIdReq {
+  int64 Id = 1;
+}
+
+message FindAdressByIdResp {
+  int64 Id = 1;
+  string Contact = 2;
+  int64 IsDefault = 3;
+  string Mobile = 4;
+  string Notes = 5;
+  string Province = 6;
+  string City = 7;
+  string Street = 8;
+  string Town = 9;
+}
