@@ -1,0 +1,63 @@
+syntax = "v1"
+
+//POST 创建订单
+type (
+	CreateOrdeReq {
+		AddressId   int         `json:"addressId"`
+		PaymentType int         `json:"paymentType"`
+		Details     []DetailDTO `json:"details"`
+	}
+	DetailDTO {
+		ItemId int `json:"itemId"`
+		Num    int `json:"num"`
+	}
+)
+
+//GET 根据id查询订单
+type (
+	FindOrderByIdReq {
+		Id int `path:"id"`
+	}
+
+	FindOrderByIdResp {
+		FindOrderByIdVO
+	}
+
+	FindOrderByIdVO {
+		Id          int    `json:"id"`
+		PayTime     string `json:"payTime"`
+		PaymentType int    `json:"paymentType"`
+		Status      int    `json:"status"`
+		TotalFee    int    `json:"totalFee"`
+		UserId      int    `json:"userId"`
+		CloseTime   string `json:"closeTime"`
+		CommentTime string `json:"commentTime"`
+		ConsignTime string `json:"consignTime"`
+		CreateTime  string `json:"createTime"`
+		EndTime     string `json:"endTime"`
+	}
+)
+
+//PUT 标记订单已支付
+type MarkOrderReq {
+	OrderId string `path:"orderId"`
+}
+
+@server (
+	jwt : Auth
+	prefix : /orders
+)
+
+service order-api {
+	//PUT 标记订单已支付
+	@handler MarkOrder
+	put /:orderId (MarkOrderReq)
+
+	//GET 根据id查询订单
+	@handler FindOrderById
+	get /:id (FindOrderByIdReq) returns (FindOrderByIdResp)
+
+	//POST 创建订单
+	@handler CreateOrder
+	post / (CreateOrdeReq)
+}

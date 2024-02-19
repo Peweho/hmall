@@ -1,0 +1,19 @@
+Name: mq-api
+Host: 0.0.0.0
+Port: 8886
+
+KqConsumerConf:
+  Name: kqConsumer
+  Brokers:
+    - 192.168.92.201:9092
+  Group: kqConsumer
+  Topic: topic-hmall-order-status
+  Offset: last
+  Consumers: 1
+  Processors: 1
+
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node

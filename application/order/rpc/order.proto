@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package service;
+option go_package="./pb";
+
+service Order {
+  rpc FindOrderById(FindOrderByIdReq) returns (FindOrderByIdResp);
+}
+
+message FindOrderByIdReq {
+  int64 Id = 1;
+}
+
+message FindOrderByIdResp {
+  int64 Id = 1;
+  string PayTime = 2;
+  int64 PaymentType = 3;
+  int64 Status = 4;
+  int64 TotalFee = 5;
+  int64 UserId = 6;
+  string CloseTime = 7;
+  string CommentTime = 8;
+  string ConsignTime = 9;
+  string CreateTime = 10;
+  string EndTime = 11;
+}
