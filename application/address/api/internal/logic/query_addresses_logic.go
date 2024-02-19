@@ -64,20 +64,18 @@ func (l *QueryAddressesLogic) QueryAddresses() (resp *types.QueryAddressesResp, 
 		addressesDTO = append(addressesDTO, *temp)
 		//3、异步写缓存
 		threading.GoSafe(func() {
+			defer wg.Done()
 			wg.Add(1)
 			marshal, err := json.Marshal(temp)
 			if err != nil {
 				logx.Errorf("json.Marshal: %v, error: %v", temp, err)
-				wg.Done()
 				return
 			}
 			_, err = l.svcCtx.BizRedis.Zadd(key, time.Now().Unix(), string(marshal))
 			if err != nil {
 				logx.Errorf("BizRedis.Zadd: %v, error: %v", string(marshal), err)
-				wg.Done()
 				return
 			}
-			wg.Done()
 		})
 	}
 	wg.Wait()

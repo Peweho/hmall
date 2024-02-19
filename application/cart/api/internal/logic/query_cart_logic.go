@@ -99,6 +99,7 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 		}
 		//3、写缓存
 		threading.GoSafe(func() {
+			defer wg.Done()
 			wg.Add(1)
 			marshal, err := json.Marshal(temp)
 			if err != nil {
@@ -110,7 +111,6 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 				logx.Errorf("BizRedis.Hset: %v, error: %v", string(marshal), err)
 				return
 			}
-			wg.Done()
 		})
 		CartItems = append(CartItems, temp)
 	}
