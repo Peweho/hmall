@@ -23,7 +23,7 @@ DB:
 KqPusherConf:
   Brokers:
     - 192.168.92.201:9092
-  Topic: topic-hmall-cart-order-status
+  Topic: topic-hmall-cart-UpdateStatus
 
 ItemRPC:
   Etcd:

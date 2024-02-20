@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"strconv"
 
 	"hmall/application/order/api/internal/svc"
 	"hmall/application/order/api/internal/types"
@@ -24,7 +25,15 @@ func NewMarkOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MarkOrd
 }
 
 func (l *MarkOrderLogic) MarkOrder(req *types.MarkOrderReq) error {
-	// todo: add your logic here and delete this line
+	id, err := strconv.Atoi(req.OrderId)
+	if err != nil {
+		logx.Errorf("strconv.Atoi: %v, error: %v", id, err)
+		return err
+	}
+	pusherLogic := NewPusherLogic(l.ctx, l.svcCtx)
+	if err = pusherLogic.UpdateStatus(id); err != nil {
+		return err
+	}
 
 	return nil
 }

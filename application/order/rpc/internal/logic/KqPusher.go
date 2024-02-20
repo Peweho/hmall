@@ -3,7 +3,7 @@ package logic
 import (
 	"context"
 	"github.com/zeromicro/go-zero/core/logx"
-	"hmall/application/order/api/internal/svc"
+	"hmall/application/order/rpc/internal/svc"
 	"strconv"
 )
 

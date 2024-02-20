@@ -1,27 +1,28 @@
 package svc
 
 import (
-	"github.com/zeromicro/go-zero/core/stores/redis"
 	"hmall/application/order/mq/internal/config"
+	"hmall/application/order/mq/internal/model"
+	"hmall/pkg/orm"
 )
 
 type ServiceContext struct {
-	Config   config.Config
-	BizRedis *redis.Redis
+	Config     config.Config
+	Db         *orm.DB
+	OrderModel *model.OrderModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	rds, err := redis.NewRedis(redis.RedisConf{
-		Host: c.BizRedis.Host,
-		Pass: c.BizRedis.Pass,
-		Type: c.BizRedis.Type,
+	db := orm.MustNewMysql(&orm.Config{
+		DSN:          c.DB.DataSource,
+		MaxOpenConns: c.DB.MaxOpenConns,
+		MaxIdleConns: c.DB.MaxIdleConns,
+		MaxLifetime:  c.DB.MaxLifetime,
 	})
-	if err != nil {
-		panic(err)
-	}
 
 	return &ServiceContext{
-		Config:   c,
-		BizRedis: rds,
+		Config:     c,
+		Db:         db,
+		OrderModel: model.NewOrderModel(db.DB),
 	}
 }

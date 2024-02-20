@@ -7,13 +7,13 @@ KqConsumerConf:
   Brokers:
     - 192.168.92.201:9092
   Group: kqConsumer
-  Topic: topic-hmall-order-UpdateCache
+  Topic: topic-hmall-order-UpdateStatus
   Offset: last
   Consumers: 1
   Processors: 1
 
-
-BizRedis:
-  Host: 192.168.92.201:6379
-  Pass:
-  Type: node
+DB:
+  DataSource: "root:123@tcp(192.168.92.201:3307)/hmall?parseTime=true&loc=Local&charset=utf8mb4"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600
