@@ -3,8 +3,12 @@ package svc
 import (
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/stores/redis"
+	"github.com/zeromicro/go-zero/zrpc"
+	"hmall/application/address/rpc/address"
+	"hmall/application/item/rpc/item"
 	"hmall/application/order/api/internal/config"
 	"hmall/application/order/api/internal/model"
+	"hmall/pkg/interceptors"
 	"hmall/pkg/orm"
 )
 
@@ -12,8 +16,10 @@ type ServiceContext struct {
 	Config         config.Config
 	BizRedis       *redis.Redis
 	Db             *orm.DB
-	AddressModel   *model.OrderModel
+	OrderModel     *model.OrderModel
 	KqPusherClient *kq.Pusher
+	AddressRPC     address.Address
+	ItemRPC        item.Item
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -31,11 +37,15 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MaxIdleConns: c.DB.MaxIdleConns,
 		MaxLifetime:  c.DB.MaxLifetime,
 	})
+	addressRPC := zrpc.MustNewClient(c.AddressRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
+	itemRPC := zrpc.MustNewClient(c.ItemRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	return &ServiceContext{
 		Config:         c,
 		BizRedis:       rds,
 		Db:             db,
-		AddressModel:   model.NewOrderModel(db.DB),
+		OrderModel:     model.NewOrderModel(db.DB),
 		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
+		AddressRPC:     address.NewAddress(addressRPC),
+		ItemRPC:        item.NewItem(itemRPC),
 	}
 }

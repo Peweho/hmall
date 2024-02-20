@@ -24,3 +24,17 @@ KqPusherConf:
   Brokers:
     - 192.168.92.201:9092
   Topic: topic-hmall-cart-order-status
+
+ItemRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: item.rpc
+  NonBlock: true
+
+AddressRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: address.rpc
+  NonBlock: true
