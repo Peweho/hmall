@@ -26,3 +26,8 @@ func (s *OrderServer) FindOrderById(ctx context.Context, in *pb.FindOrderByIdReq
 	l := logic.NewFindOrderByIdLogic(ctx, s.svcCtx)
 	return l.FindOrderById(in)
 }
+
+func (s *OrderServer) UpdateOrderStatus(ctx context.Context, in *pb.UpdateOrderStatusReq) (*pb.UpdateOrderStatusResp, error) {
+	l := logic.NewUpdateOrderStatusLogic(ctx, s.svcCtx)
+	return l.UpdateOrderStatus(in)
+}

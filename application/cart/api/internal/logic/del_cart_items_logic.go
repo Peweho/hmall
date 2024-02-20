@@ -4,6 +4,7 @@ import (
 	"context"
 	"hmall/application/cart/api/internal/model"
 	"hmall/application/cart/api/internal/utils"
+	"hmall/application/cart/rpc/carts"
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
 	"strconv"
@@ -29,9 +30,9 @@ func NewDelCartItemsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelC
 }
 
 func (l *DelCartItemsLogic) DelCartItems(req *types.DelCartItemsReq) error {
-	//1、删除数据库
-	if err := l.svcCtx.CartModel.DelCartsByIds(l.ctx, req.Ids); err != nil {
-		logx.Errorf("CartModel.DelCartById: %V, error: %v", req.Ids, err)
+	//1、调用rpc方法删除数据库
+	if _, err := l.svcCtx.CartsPRC.DelCarts(l.ctx, &carts.DelCartsReq{Ids: req.Ids}); err != nil {
+		logx.Errorf("CartsPRC.DelCarts: %V, error: %v", req.Ids, err)
 		return err
 	}
 	//2、调用mq服务删除缓存

@@ -9,6 +9,7 @@ import (
 type Config struct {
 	rest.RestConf
 	ItemRPC  zrpc.RpcClientConf
+	CartsRPC zrpc.RpcClientConf
 	BizRedis redis.RedisConf
 	Auth     struct {
 		AccessSecret string

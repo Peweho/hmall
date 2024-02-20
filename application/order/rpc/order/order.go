@@ -13,11 +13,14 @@ import (
 )
 
 type (
-	FindOrderByIdReq  = pb.FindOrderByIdReq
-	FindOrderByIdResp = pb.FindOrderByIdResp
+	FindOrderByIdReq      = pb.FindOrderByIdReq
+	FindOrderByIdResp     = pb.FindOrderByIdResp
+	UpdateOrderStatusReq  = pb.UpdateOrderStatusReq
+	UpdateOrderStatusResp = pb.UpdateOrderStatusResp
 
 	Order interface {
 		FindOrderById(ctx context.Context, in *FindOrderByIdReq, opts ...grpc.CallOption) (*FindOrderByIdResp, error)
+		UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error)
 	}
 
 	defaultOrder struct {
@@ -34,4 +37,9 @@ func NewOrder(cli zrpc.Client) Order {
 func (m *defaultOrder) FindOrderById(ctx context.Context, in *FindOrderByIdReq, opts ...grpc.CallOption) (*FindOrderByIdResp, error) {
 	client := pb.NewOrderClient(m.cli.Conn())
 	return client.FindOrderById(ctx, in, opts...)
+}
+
+func (m *defaultOrder) UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error) {
+	client := pb.NewOrderClient(m.cli.Conn())
+	return client.UpdateOrderStatus(ctx, in, opts...)
 }

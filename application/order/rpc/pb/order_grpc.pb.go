@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OrderClient interface {
 	FindOrderById(ctx context.Context, in *FindOrderByIdReq, opts ...grpc.CallOption) (*FindOrderByIdResp, error)
+	UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error)
 }
 
 type orderClient struct {
@@ -42,11 +43,21 @@ func (c *orderClient) FindOrderById(ctx context.Context, in *FindOrderByIdReq, o
 	return out, nil
 }
 
+func (c *orderClient) UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error) {
+	out := new(UpdateOrderStatusResp)
+	err := c.cc.Invoke(ctx, "/service.Order/UpdateOrderStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServer is the server API for Order service.
 // All implementations must embed UnimplementedOrderServer
 // for forward compatibility
 type OrderServer interface {
 	FindOrderById(context.Context, *FindOrderByIdReq) (*FindOrderByIdResp, error)
+	UpdateOrderStatus(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error)
 	mustEmbedUnimplementedOrderServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedOrderServer struct {
 
 func (UnimplementedOrderServer) FindOrderById(context.Context, *FindOrderByIdReq) (*FindOrderByIdResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindOrderById not implemented")
+}
+func (UnimplementedOrderServer) UpdateOrderStatus(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrderStatus not implemented")
 }
 func (UnimplementedOrderServer) mustEmbedUnimplementedOrderServer() {}
 
@@ -88,6 +102,24 @@ func _Order_FindOrderById_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Order_UpdateOrderStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrderStatusReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServer).UpdateOrderStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Order/UpdateOrderStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServer).UpdateOrderStatus(ctx, req.(*UpdateOrderStatusReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Order_ServiceDesc is the grpc.ServiceDesc for Order service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var Order_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindOrderById",
 			Handler:    _Order_FindOrderById_Handler,
+		},
+		{
+			MethodName: "UpdateOrderStatus",
+			Handler:    _Order_UpdateOrderStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

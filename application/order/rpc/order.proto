@@ -5,6 +5,7 @@ option go_package="./pb";
 
 service Order {
   rpc FindOrderById(FindOrderByIdReq) returns (FindOrderByIdResp);
+  rpc UpdateOrderStatus(UpdateOrderStatusReq) returns (UpdateOrderStatusResp);
 }
 
 message FindOrderByIdReq {
@@ -24,3 +25,12 @@ message FindOrderByIdResp {
   string CreateTime = 10;
   string EndTime = 11;
 }
+
+message UpdateOrderStatusReq {
+  int64 Id = 1;
+}
+
+message UpdateOrderStatusResp {
+
+}
+

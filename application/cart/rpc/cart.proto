@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package service;
+option go_package="./pb";
+
+service Carts {
+  rpc DelCarts (DelCartsReq) returns (DelCartsResp);
+}
+
+message DelCartsReq {
+  repeated string ids = 1;
+}
+
+message DelCartsResp {
+
+}
