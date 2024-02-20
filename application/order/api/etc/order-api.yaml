@@ -32,6 +32,13 @@ ItemRPC:
     Key: item.rpc
   NonBlock: true
 
+OrderRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: order.rpc
+  NonBlock: true
+
 AddressRPC:
   Etcd:
     Hosts:

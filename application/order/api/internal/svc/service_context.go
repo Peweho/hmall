@@ -8,6 +8,7 @@ import (
 	"hmall/application/item/rpc/item"
 	"hmall/application/order/api/internal/config"
 	"hmall/application/order/api/internal/model"
+	"hmall/application/order/rpc/order"
 	"hmall/pkg/interceptors"
 	"hmall/pkg/orm"
 )
@@ -20,6 +21,7 @@ type ServiceContext struct {
 	KqPusherClient *kq.Pusher
 	AddressRPC     address.Address
 	ItemRPC        item.Item
+	OrderRPC       order.Order
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -39,6 +41,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	})
 	addressRPC := zrpc.MustNewClient(c.AddressRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	itemRPC := zrpc.MustNewClient(c.ItemRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
+	orderRPC := zrpc.MustNewClient(c.OrderRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	return &ServiceContext{
 		Config:         c,
 		BizRedis:       rds,
@@ -47,5 +50,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
 		AddressRPC:     address.NewAddress(addressRPC),
 		ItemRPC:        item.NewItem(itemRPC),
+		OrderRPC:       order.NewOrder(orderRPC),
 	}
 }

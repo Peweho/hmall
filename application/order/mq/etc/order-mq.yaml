@@ -7,7 +7,7 @@ KqConsumerConf:
   Brokers:
     - 192.168.92.201:9092
   Group: kqConsumer
-  Topic: topic-hmall-order-status
+  Topic: topic-hmall-order-UpdateCache
   Offset: last
   Consumers: 1
   Processors: 1
