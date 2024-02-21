@@ -15,8 +15,8 @@ type ItemDTO struct {
 	Spec         string
 	Status       int64
 	Stock        int64
-	CreatedAt    *time.Time `goem:"create_time"`
-	UpdateTime   *time.Time `goem:"update_time"`
+	CreatedAt    time.Time `gorm:"create_time"`
+	UpdateTime   time.Time `gorm:"update_time"`
 	Creater      int64
 	Updater      int64
 }

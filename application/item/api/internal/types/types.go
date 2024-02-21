@@ -7,7 +7,7 @@ type ItemReqAndResp struct {
 	CommentCount int    `json:"commentCount"`
 	Id           int    `json:"id"`
 	Image        string `json:"image"`
-	IsAD         bool   `json:"isAd"`
+	IsAD         bool   `json:"isAD"`
 	Name         string `json:"name"`
 	Price        int    `json:"price"`
 	Sold         int    `json:"sold"`

@@ -54,9 +54,9 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *service.FindItemByIdsReq) (*servi
 	}
 
 	//3、写缓存
-	threading.GoSafe(func() {
+	threading.NewWorkerGroup(func() {
 		_ = l.WriteCache(res)
-	})
+	}, 1)
 
 	//4、类型转换
 	for _, v := range res {
