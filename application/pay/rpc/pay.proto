@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package service;
+option go_package="./pb";
+
+service Pay {
+  rpc UpdatePayOrder (UpdatePayOrderReq) returns (UpdatePayOrderResp);
+}
+
+message UpdatePayOrderReq {
+  enum PayTypeEnum {
+      _  = 0;
+      H5 = 1;
+      Applet = 2;
+      Multitude_Account = 3;
+      Scan_Code = 4;
+      Balance = 5;
+  }
+  PayTypeEnum PayType = 1;
+
+  enum PayStatus {
+    Wait_Commit  = 0;
+    Wait_Pay = 1;
+    PayTimeOut = 2;
+    Pay_Success = 3;
+  }
+  PayStatus Status = 2;
+  string PayTime = 4;
+}
+
+message UpdatePayOrderResp {
+  int32 Code = 1;
+  string Msg = 2;
+}
+

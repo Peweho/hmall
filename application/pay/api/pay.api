@@ -1,0 +1,30 @@
+syntax = "v1"
+
+//POST 生成支付单
+type CreatePayReq {
+	Amount         int    `json:"amount"`
+	BizOrderNo     int    `json:"bizOrderNo"`
+	OrderInfo      string `json:"orderInfo"`
+	PayChannelCode string `json:"payChannelCode"`
+	PayType        int    `json:"payType"`
+}
+
+type UseBalancePayReq {
+	Id int    `path:"id"`
+	Pw string `json:"pw"`
+}
+
+@server (
+	jwt : Auth
+	prefix :  /pay-orders
+)
+
+service pay-api {
+	@doc("生成支付单")
+	@handler CreatePay
+	post / (CreatePayReq)
+
+	@doc("尝试基于用户余额支付")
+	@handler UseBalancePay
+	post /:id (UseBalancePayReq)
+}
