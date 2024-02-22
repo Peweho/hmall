@@ -18,11 +18,3 @@ type CartPO struct {
 func (m *CartPO) TableName() string {
 	return "cart"
 }
-
-type CartPOArr []CartPO
-
-func (m CartPOArr) Len() int { return len(m) }
-
-func (m CartPOArr) Less(i, j int) bool { return m[i].ItemId < m[j].ItemId }
-
-func (m CartPOArr) Swap(i, j int) { m[i], m[j] = m[j], m[i] }

@@ -5,10 +5,12 @@ option go_package="./pb";
 
 service Carts {
   rpc DelCarts (DelCartsReq) returns (DelCartsResp);
+  rpc DelCartsRollBack (DelCartsReq) returns (DelCartsResp);
 }
 
 message DelCartsReq {
-  repeated string ids = 1;
+  int64 usr = 1;
+  repeated string ItemId = 2;
 }
 
 message DelCartsResp {

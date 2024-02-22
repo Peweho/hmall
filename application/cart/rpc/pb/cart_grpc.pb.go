@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CartsClient interface {
 	DelCarts(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error)
+	DelCartsRollBack(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error)
 }
 
 type cartsClient struct {
@@ -42,11 +43,21 @@ func (c *cartsClient) DelCarts(ctx context.Context, in *DelCartsReq, opts ...grp
 	return out, nil
 }
 
+func (c *cartsClient) DelCartsRollBack(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error) {
+	out := new(DelCartsResp)
+	err := c.cc.Invoke(ctx, "/service.Carts/DelCartsRollBack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CartsServer is the server API for Carts service.
 // All implementations must embed UnimplementedCartsServer
 // for forward compatibility
 type CartsServer interface {
 	DelCarts(context.Context, *DelCartsReq) (*DelCartsResp, error)
+	DelCartsRollBack(context.Context, *DelCartsReq) (*DelCartsResp, error)
 	mustEmbedUnimplementedCartsServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedCartsServer struct {
 
 func (UnimplementedCartsServer) DelCarts(context.Context, *DelCartsReq) (*DelCartsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelCarts not implemented")
+}
+func (UnimplementedCartsServer) DelCartsRollBack(context.Context, *DelCartsReq) (*DelCartsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelCartsRollBack not implemented")
 }
 func (UnimplementedCartsServer) mustEmbedUnimplementedCartsServer() {}
 
@@ -88,6 +102,24 @@ func _Carts_DelCarts_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Carts_DelCartsRollBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DelCartsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CartsServer).DelCartsRollBack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Carts/DelCartsRollBack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CartsServer).DelCartsRollBack(ctx, req.(*DelCartsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Carts_ServiceDesc is the grpc.ServiceDesc for Carts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var Carts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DelCarts",
 			Handler:    _Carts_DelCarts_Handler,
+		},
+		{
+			MethodName: "DelCartsRollBack",
+			Handler:    _Carts_DelCartsRollBack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

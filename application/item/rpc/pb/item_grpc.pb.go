@@ -4,7 +4,7 @@
 // - protoc             v4.24.3
 // source: item.proto
 
-package service
+package pb
 
 import (
 	context "context"
@@ -23,6 +23,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ItemClient interface {
 	FindItemByIds(ctx context.Context, in *FindItemByIdsReq, opts ...grpc.CallOption) (*FindItemByIdsResp, error)
+	DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
+	DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
 }
 
 type itemClient struct {
@@ -42,11 +44,31 @@ func (c *itemClient) FindItemByIds(ctx context.Context, in *FindItemByIdsReq, op
 	return out, nil
 }
 
+func (c *itemClient) DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error) {
+	out := new(DelStockResp)
+	err := c.cc.Invoke(ctx, "/service.Item/DelStock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *itemClient) DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error) {
+	out := new(DelStockResp)
+	err := c.cc.Invoke(ctx, "/service.Item/DelStockRollBack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ItemServer is the server API for Item service.
 // All implementations must embed UnimplementedItemServer
 // for forward compatibility
 type ItemServer interface {
 	FindItemByIds(context.Context, *FindItemByIdsReq) (*FindItemByIdsResp, error)
+	DelStock(context.Context, *DelStockReq) (*DelStockResp, error)
+	DelStockRollBack(context.Context, *DelStockReq) (*DelStockResp, error)
 	mustEmbedUnimplementedItemServer()
 }
 
@@ -56,6 +78,12 @@ type UnimplementedItemServer struct {
 
 func (UnimplementedItemServer) FindItemByIds(context.Context, *FindItemByIdsReq) (*FindItemByIdsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindItemByIds not implemented")
+}
+func (UnimplementedItemServer) DelStock(context.Context, *DelStockReq) (*DelStockResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelStock not implemented")
+}
+func (UnimplementedItemServer) DelStockRollBack(context.Context, *DelStockReq) (*DelStockResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelStockRollBack not implemented")
 }
 func (UnimplementedItemServer) mustEmbedUnimplementedItemServer() {}
 
@@ -88,6 +116,42 @@ func _Item_FindItemByIds_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Item_DelStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DelStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ItemServer).DelStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Item/DelStock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ItemServer).DelStock(ctx, req.(*DelStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Item_DelStockRollBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DelStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ItemServer).DelStockRollBack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Item/DelStockRollBack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ItemServer).DelStockRollBack(ctx, req.(*DelStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Item_ServiceDesc is the grpc.ServiceDesc for Item service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +162,14 @@ var Item_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindItemByIds",
 			Handler:    _Item_FindItemByIds_Handler,
+		},
+		{
+			MethodName: "DelStock",
+			Handler:    _Item_DelStock_Handler,
+		},
+		{
+			MethodName: "DelStockRollBack",
+			Handler:    _Item_DelStockRollBack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -31,3 +31,13 @@ func (s *OrderServer) UpdateOrderStatus(ctx context.Context, in *pb.UpdateOrderS
 	l := logic.NewUpdateOrderStatusLogic(ctx, s.svcCtx)
 	return l.UpdateOrderStatus(in)
 }
+
+func (s *OrderServer) CreateOrder(ctx context.Context, in *pb.CreateOrderReq) (*pb.CreateOrderResp, error) {
+	l := logic.NewCreateOrderLogic(ctx, s.svcCtx)
+	return l.CreateOrder(in)
+}
+
+func (s *OrderServer) CreateOrderRollBack(ctx context.Context, in *pb.CreateOrderReq) (*pb.CreateOrderResp, error) {
+	l := logic.NewCreateOrderRollBackLogic(ctx, s.svcCtx)
+	return l.CreateOrderRollBack(in)
+}

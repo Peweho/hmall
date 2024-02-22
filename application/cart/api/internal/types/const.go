@@ -24,3 +24,9 @@ const (
 	MSgAddCache = "0"
 	MSgDelCache = "1"
 )
+
+// 购物车删除状态
+const (
+	Deleted    = "Deleted"
+	NotDeleted = "NotDelete"
+)

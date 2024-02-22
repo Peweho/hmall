@@ -47,7 +47,7 @@ func (l *FindOrderByIdLogic) FindOrderById(in *pb.FindOrderByIdReq) (*pb.FindOrd
 	}
 
 	//写缓存
-	err = l.WriteCacheOrder(key, &order)
+	err = l.WriteCacheOrder(key, order)
 	if err != nil {
 		return &pb.FindOrderByIdResp{}, err
 	}

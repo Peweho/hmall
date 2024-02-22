@@ -14,3 +14,19 @@ const (
 	TradeCancellation = 5 //交易取消
 	TradeEnd          = 6 //交易结束
 )
+
+// jwt 令牌关键字
+const (
+	JwtKey = "Id"
+)
+
+// 返回码
+const (
+	OK             = 200
+	Created        = 201
+	Unauthorized   = 401
+	Forbidden      = 403
+	NotFound       = 404
+	PwdInCorrect   = 405
+	MoneyNotenough = 406
+)

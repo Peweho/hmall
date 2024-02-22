@@ -1,10 +1,12 @@
 syntax = "proto3";
 
 package service;
-option go_package="./service";
+option go_package="./pb";
 
 service Item {
   rpc FindItemByIds(FindItemByIdsReq) returns (FindItemByIdsResp);
+  rpc DelStock(DelStockReq) returns (DelStockResp);
+  rpc DelStockRollBack(DelStockReq) returns (DelStockResp);
 }
 
 message FindItemByIdsReq {
@@ -28,4 +30,17 @@ message Items {
     string spec  = 10;
     int64 status = 11;
     int64 stock = 12;
+}
+
+message DelStockReq {
+    repeated ItemDetail Detail = 1;
+}
+
+message ItemDetail {
+    string ItemId = 1;
+    int64 Num = 2;
+}
+
+message DelStockResp {
+
 }

@@ -26,4 +26,5 @@ type Config struct {
 	AddressRPC zrpc.RpcClientConf
 	ItemRPC    zrpc.RpcClientConf
 	OrderRPC   zrpc.RpcClientConf
+	CartRPC    zrpc.RpcClientConf
 }

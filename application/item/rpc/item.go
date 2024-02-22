@@ -11,7 +11,7 @@ import (
 	"hmall/application/item/rpc/internal/config"
 	"hmall/application/item/rpc/internal/server"
 	"hmall/application/item/rpc/internal/svc"
-	svc1 "hmall/application/item/rpc/types/service"
+	"hmall/application/item/rpc/pb"
 	"hmall/pkg/interceptors"
 )
 
@@ -25,7 +25,7 @@ func main() {
 	ctx := svc.NewServiceContext(c)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		svc1.RegisterItemServer(grpcServer, server.NewItemServer(ctx))
+		pb.RegisterItemServer(grpcServer, server.NewItemServer(ctx))
 
 		if c.Mode == service.DevMode || c.Mode == service.TestMode {
 			reflection.Register(grpcServer)

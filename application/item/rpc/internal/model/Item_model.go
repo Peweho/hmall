@@ -22,3 +22,21 @@ func (m *ItemModel) FindItemByIds(ctx context.Context, ids []string) ([]ItemDTO,
 		Find(&items).Error
 	return items, err
 }
+
+// 扣减库存
+func (m *ItemModel) DecutStock(ctx context.Context, id string, num int64) (*ItemDTO, error) {
+	var res ItemDTO
+	err := m.db.WithContext(ctx).
+		Model(&ItemDTO{}).
+		Where("id = ?", id).
+		Update("stock", gorm.Expr("stock - ?", num)).Find(&res).Error
+	return &res, err
+}
+
+// 恢复库存
+func (m *ItemModel) AddStock(ctx context.Context, id string, num int64) error {
+	return m.db.WithContext(ctx).
+		Model(&ItemDTO{}).
+		Where("id = ?", id).
+		Update("stock", gorm.Expr("stock + ?", num)).Error
+}

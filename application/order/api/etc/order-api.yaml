@@ -45,3 +45,10 @@ AddressRPC:
       - 192.168.92.201:2379
     Key: address.rpc
   NonBlock: true
+
+CartRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: cart.rpc
+  NonBlock: true

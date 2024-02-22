@@ -8,12 +8,12 @@ import (
 
 	"hmall/application/item/rpc/internal/logic"
 	"hmall/application/item/rpc/internal/svc"
-	"hmall/application/item/rpc/types/service"
+	"hmall/application/item/rpc/pb"
 )
 
 type ItemServer struct {
 	svcCtx *svc.ServiceContext
-	service.UnimplementedItemServer
+	pb.UnimplementedItemServer
 }
 
 func NewItemServer(svcCtx *svc.ServiceContext) *ItemServer {
@@ -22,7 +22,17 @@ func NewItemServer(svcCtx *svc.ServiceContext) *ItemServer {
 	}
 }
 
-func (s *ItemServer) FindItemByIds(ctx context.Context, in *service.FindItemByIdsReq) (*service.FindItemByIdsResp, error) {
+func (s *ItemServer) FindItemByIds(ctx context.Context, in *pb.FindItemByIdsReq) (*pb.FindItemByIdsResp, error) {
 	l := logic.NewFindItemByIdsLogic(ctx, s.svcCtx)
 	return l.FindItemByIds(in)
+}
+
+func (s *ItemServer) DelStock(ctx context.Context, in *pb.DelStockReq) (*pb.DelStockResp, error) {
+	l := logic.NewDelStockLogic(ctx, s.svcCtx)
+	return l.DelStock(in)
+}
+
+func (s *ItemServer) DelStockRollBack(ctx context.Context, in *pb.DelStockReq) (*pb.DelStockResp, error) {
+	l := logic.NewDelStockRollBackLogic(ctx, s.svcCtx)
+	return l.DelStockRollBack(in)
 }

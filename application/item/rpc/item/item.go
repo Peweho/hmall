@@ -6,19 +6,24 @@ package item
 import (
 	"context"
 
-	"hmall/application/item/rpc/types/service"
+	"hmall/application/item/rpc/pb"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	FindItemByIdsReq  = service.FindItemByIdsReq
-	FindItemByIdsResp = service.FindItemByIdsResp
-	Items             = service.Items
+	DelStockReq       = pb.DelStockReq
+	DelStockResp      = pb.DelStockResp
+	FindItemByIdsReq  = pb.FindItemByIdsReq
+	FindItemByIdsResp = pb.FindItemByIdsResp
+	ItemDetail        = pb.ItemDetail
+	Items             = pb.Items
 
 	Item interface {
 		FindItemByIds(ctx context.Context, in *FindItemByIdsReq, opts ...grpc.CallOption) (*FindItemByIdsResp, error)
+		DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
+		DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
 	}
 
 	defaultItem struct {
@@ -33,6 +38,16 @@ func NewItem(cli zrpc.Client) Item {
 }
 
 func (m *defaultItem) FindItemByIds(ctx context.Context, in *FindItemByIdsReq, opts ...grpc.CallOption) (*FindItemByIdsResp, error) {
-	client := service.NewItemClient(m.cli.Conn())
+	client := pb.NewItemClient(m.cli.Conn())
 	return client.FindItemByIds(ctx, in, opts...)
+}
+
+func (m *defaultItem) DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error) {
+	client := pb.NewItemClient(m.cli.Conn())
+	return client.DelStock(ctx, in, opts...)
+}
+
+func (m *defaultItem) DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error) {
+	client := pb.NewItemClient(m.cli.Conn())
+	return client.DelStockRollBack(ctx, in, opts...)
 }

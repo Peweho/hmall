@@ -18,6 +18,7 @@ type (
 
 	Carts interface {
 		DelCarts(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error)
+		DelCartsRollBack(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error)
 	}
 
 	defaultCarts struct {
@@ -34,4 +35,9 @@ func NewCarts(cli zrpc.Client) Carts {
 func (m *defaultCarts) DelCarts(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error) {
 	client := pb.NewCartsClient(m.cli.Conn())
 	return client.DelCarts(ctx, in, opts...)
+}
+
+func (m *defaultCarts) DelCartsRollBack(ctx context.Context, in *DelCartsReq, opts ...grpc.CallOption) (*DelCartsResp, error) {
+	client := pb.NewCartsClient(m.cli.Conn())
+	return client.DelCartsRollBack(ctx, in, opts...)
 }

@@ -26,3 +26,8 @@ func (s *CartsServer) DelCarts(ctx context.Context, in *pb.DelCartsReq) (*pb.Del
 	l := logic.NewDelCartsLogic(ctx, s.svcCtx)
 	return l.DelCarts(in)
 }
+
+func (s *CartsServer) DelCartsRollBack(ctx context.Context, in *pb.DelCartsReq) (*pb.DelCartsResp, error) {
+	l := logic.NewDelCartsRollBackLogic(ctx, s.svcCtx)
+	return l.DelCartsRollBack(in)
+}

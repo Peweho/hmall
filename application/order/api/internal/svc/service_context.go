@@ -5,6 +5,7 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 	"hmall/application/address/rpc/address"
+	"hmall/application/cart/rpc/carts"
 	"hmall/application/item/rpc/item"
 	"hmall/application/order/api/internal/config"
 	"hmall/application/order/api/internal/model"
@@ -22,6 +23,7 @@ type ServiceContext struct {
 	AddressRPC     address.Address
 	ItemRPC        item.Item
 	OrderRPC       order.Order
+	CartRPC        carts.Carts
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -42,6 +44,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	addressRPC := zrpc.MustNewClient(c.AddressRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	itemRPC := zrpc.MustNewClient(c.ItemRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	orderRPC := zrpc.MustNewClient(c.OrderRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
+	cartRPC := zrpc.MustNewClient(c.CartRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	return &ServiceContext{
 		Config:         c,
 		BizRedis:       rds,
@@ -51,5 +54,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		AddressRPC:     address.NewAddress(addressRPC),
 		ItemRPC:        item.NewItem(itemRPC),
 		OrderRPC:       order.NewOrder(orderRPC),
+		CartRPC:        carts.NewCarts(cartRPC),
 	}
 }
