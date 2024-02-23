@@ -10,6 +10,7 @@ import (
 	"hmall/application/item/rpc/internal/svc"
 	"hmall/application/item/rpc/pb"
 	"hmall/application/item/rpc/types"
+	"hmall/pkg/util"
 	"hmall/pkg/xcode"
 	"strconv"
 )
@@ -111,6 +112,24 @@ func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string) ([]stri
 			logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
 			return nil, err
 		}
+
+		//查询库存缓存 （商品缓存存在，库存缓存一定在）
+		key2 := util.CacheKey(types.CacheItemStockKey, v)
+		get, err := l.svcCtx.BizRedis.Get(key2)
+		if err != nil {
+			logx.Errorf("BizRedis.Get: %v , error: ,%v", key2, err)
+			ids = append(ids, v)
+			continue
+		}
+		_ = l.svcCtx.BizRedis.Expire(key2, types.CacheItemTime)
+		stock, err := strconv.ParseInt(get, 10, 64)
+		if err != nil {
+			logx.Errorf("strconv.ParseInt: %v , error: ,%v", get, err)
+			ids = append(ids, v)
+			continue
+		}
+
+		temp.Stock = stock
 		*items = append(*items, &temp)
 	}
 	return newIds, nil
@@ -127,10 +146,18 @@ func (l *FindItemByIdsLogic) WriteCache(items []model.ItemDTO) error {
 		key := CacheIds(strconv.Itoa(int(v.Id)))
 		err = l.svcCtx.BizRedis.Set(key, string(marshal))
 		if err != nil {
-			logx.Errorf("BizRedis.Set: %v , error: ,%v", string(marshal), err)
+			logx.Errorf("BizRedis.Set: %v , error: ,%v", key, err)
 			return err
 		}
 		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
+
+		key2 := util.CacheKey(types.CacheItemStockKey, strconv.Itoa(int(v.Id)))
+		err = l.svcCtx.BizRedis.Set(key2, strconv.Itoa(int(v.Stock)))
+		if err != nil {
+			logx.Errorf("BizRedis.Set: %v , error: ,%v", key2, err)
+			return err
+		}
+		_ = l.svcCtx.BizRedis.Expire(key2, types.CacheItemTime)
 	}
 	return nil
 }

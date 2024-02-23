@@ -1,6 +1,10 @@
 package types
 
-const CacheItemKey = "cache#item"
+const (
+	CacheItemKey      = "cache#item"
+	CacheItemStockKey = "cache#item#stock"
+	CacheOrderTime    = 3600
+)
 
 // 分页查询默认值
 const (

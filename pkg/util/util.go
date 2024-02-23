@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -39,4 +40,9 @@ func Md5Password(str string) string {
 func GetUsr(ctx context.Context, jwtKey string) (int, error) {
 	empIdJson := ctx.Value(jwtKey).(json.Number) //获得当前用户Id
 	return strconv.Atoi(empIdJson.String())
+}
+
+// 构建缓存key
+func CacheKey(prefix string, val string) string {
+	return fmt.Sprintf("%s#%s", prefix, val)
 }
