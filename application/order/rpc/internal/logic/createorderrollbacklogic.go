@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"github.com/zeromicro/go-zero/core/threading"
+	"hmall/application/order/rpc/internal/utils"
 	"log"
 	"sync"
 
@@ -50,13 +51,18 @@ func (l *CreateOrderRollBackLogic) CreateOrderRollBack(in *pb.CreateOrderReq) (*
 		err3 error
 	)
 	wg := &sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(4)
 	// 删除订单表
 	threading.GoSafe(func() {
 		defer wg.Done()
 		if err1 = l.svcCtx.OrderModel.DelOrderById(l.ctx, orderId); err1 != nil {
 			logx.Errorf("OrderModel.DelOrderById: %v, error: %v", orderId, err1)
 		}
+	})
+	//删缓存
+	threading.GoSafe(func() {
+		defer wg.Done()
+		_, _ = l.svcCtx.BizRedis.Del(utils.CacheKey(int(orderId)))
 	})
 	// 删除订单详情表
 	threading.GoSafe(func() {

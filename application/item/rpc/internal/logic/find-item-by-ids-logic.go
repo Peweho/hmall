@@ -8,8 +8,8 @@ import (
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/rpc/internal/model"
 	"hmall/application/item/rpc/internal/svc"
+	"hmall/application/item/rpc/pb"
 	"hmall/application/item/rpc/types"
-	"hmall/application/item/rpc/types/service"
 	"hmall/pkg/xcode"
 	"strconv"
 )
@@ -28,13 +28,13 @@ func NewFindItemByIdsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Fin
 	}
 }
 
-func (l *FindItemByIdsLogic) FindItemByIds(in *service.FindItemByIdsReq) (*service.FindItemByIdsResp, error) {
+func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindItemByIdsResp, error) {
 	// 1、校验参数
 	if len(in.Ids) == 0 {
 		return nil, xcode.New(200, "ids为空")
 	}
 
-	items := make([]*service.Items, 0, len(in.Ids))
+	items := make([]*pb.Items, 0, len(in.Ids))
 
 	//2、查询缓存 并且 构造新的请求ids
 	newIds, err := l.ReadCache(&items, in.Ids)
@@ -43,7 +43,7 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *service.FindItemByIdsReq) (*servi
 	}
 
 	if len(newIds) == 0 {
-		return &service.FindItemByIdsResp{Data: items}, nil
+		return &pb.FindItemByIdsResp{Data: items}, nil
 	}
 
 	//2、查询数据
@@ -64,11 +64,11 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *service.FindItemByIdsReq) (*servi
 	}
 
 	//5、返回响应
-	return &service.FindItemByIdsResp{Data: items}, nil
+	return &pb.FindItemByIdsResp{Data: items}, nil
 }
 
-func ItemDTO_To_Item(item model.ItemDTO) *service.Items {
-	return &service.Items{
+func ItemDTO_To_Item(item model.ItemDTO) *pb.Items {
+	return &pb.Items{
 		Id:           item.Id,
 		Brand:        item.Brand,
 		Category:     item.Category,
@@ -90,7 +90,7 @@ func CacheIds(id string) string {
 }
 
 // 读缓存
-func (l *FindItemByIdsLogic) ReadCache(items *[]*service.Items, ids []string) ([]string, error) {
+func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string) ([]string, error) {
 
 	newIds := make([]string, 0, len(ids))
 	for _, v := range ids {
@@ -105,7 +105,7 @@ func (l *FindItemByIdsLogic) ReadCache(items *[]*service.Items, ids []string) ([
 		//判对应商品是存在，存在加入items
 		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
 		cacheItem, _ := l.svcCtx.BizRedis.Get(key)
-		var temp service.Items
+		var temp pb.Items
 		err := json.Unmarshal([]byte(cacheItem), &temp)
 		if err != nil {
 			logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)

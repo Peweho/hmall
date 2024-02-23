@@ -3,7 +3,7 @@ package logic
 import (
 	"context"
 	"hmall/application/item/rpc/internal/svc"
-	"hmall/application/item/rpc/service"
+	"hmall/application/item/rpc/pb"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -22,7 +22,7 @@ func NewDelStockRollBackLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	}
 }
 
-func (l *DelStockRollBackLogic) DelStockRollBack(in *service.DelStockReq) (*service.DelStockResp, error) {
+func (l *DelStockRollBackLogic) DelStockRollBack(in *pb.DelStockReq) (*pb.DelStockResp, error) {
 	for _, val := range in.Detail {
 		err := l.svcCtx.ItemModel.AddStock(l.ctx, val.ItemId, val.Num)
 		if err != nil {
@@ -30,5 +30,5 @@ func (l *DelStockRollBackLogic) DelStockRollBack(in *service.DelStockReq) (*serv
 			return nil, err
 		}
 	}
-	return &service.DelStockResp{}, nil
+	return &pb.DelStockResp{}, nil
 }

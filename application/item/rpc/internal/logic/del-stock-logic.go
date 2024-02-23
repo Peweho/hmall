@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"hmall/application/item/rpc/internal/svc"
-	"hmall/application/item/rpc/service"
+	"hmall/application/item/rpc/pb"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,7 +28,7 @@ func NewDelStockLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelStock
 	}
 }
 
-func (l *DelStockLogic) DelStock(in *service.DelStockReq) (*service.DelStockResp, error) {
+func (l *DelStockLogic) DelStock(in *pb.DelStockReq) (*pb.DelStockResp, error) {
 	barrier, err := dtmgrpc.BarrierFromGrpc(l.ctx)
 	db, err := sqlx.NewMysql(l.svcCtx.Config.DB.DataSource).RawDB()
 
@@ -48,5 +48,5 @@ func (l *DelStockLogic) DelStock(in *service.DelStockReq) (*service.DelStockResp
 		return nil, status.Error(codes.Aborted, dtmcli.ResultFailure)
 	}
 
-	return &service.DelStockResp{}, nil
+	return &pb.DelStockResp{}, nil
 }

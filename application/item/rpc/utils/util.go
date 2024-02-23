@@ -1,8 +1,8 @@
 package utils
 
-import "hmall/application/item/rpc/types/service"
+import "hmall/application/item/rpc/pb"
 
-type ItemsArr []*service.Items
+type ItemsArr []*pb.Items
 
 func (m ItemsArr) Len() int { return len(m) }
 

@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"github.com/dtm-labs/client/dtmcli"
 	"github.com/dtm-labs/client/dtmgrpc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
@@ -96,7 +97,20 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 			return status.Error(codes.Aborted, dtmcli.ResultFailure)
 		}
 
-		wg.Add(2)
+		wg.Add(3)
+		threading.GoSafe(func() {
+			//写缓存
+			defer wg.Done()
+			key := utils.CacheKey(int(order.Id))
+			marshal, cacheErr := json.Marshal(order)
+			if cacheErr != nil {
+				logx.Errorf("json.Marshal: %v, error : %v", order, cacheErr)
+			} else {
+				_ = l.svcCtx.BizRedis.Set(key, string(marshal))
+				_ = l.svcCtx.BizRedis.Expire(key, utils.CacheOrderTime)
+			}
+		})
+
 		//4、写入订单发货表
 		threading.GoSafe(func() {
 			defer wg.Done()
