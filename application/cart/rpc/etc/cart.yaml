@@ -10,3 +10,8 @@ DB:
   MaxIdleConns: 10
   MaxOpenConns: 100
   ConnMaxLifetime: 3600
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node

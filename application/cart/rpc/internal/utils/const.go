@@ -5,3 +5,8 @@ const (
 	Deleted    = "Deleted"
 	NotDeleted = "NotDelete"
 )
+
+const (
+	CacheCartKey  = "cache#cart"
+	CacheCartTime = 3600
+)
