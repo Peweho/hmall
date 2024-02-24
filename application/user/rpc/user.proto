@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package service;
+option go_package="./pb";
+
+service Pay {
+  rpc DecutMoney (DecutMoneyReq) returns (DecutMoneyResp);
+  rpc DecutMoneyRollBack (DecutMoneyReq) returns (DecutMoneyResp);
+}
+
+message DecutMoneyReq {
+  int64 uid = 1;
+  int64 Amount = 2;
+  string Pwd = 3;
+}
+
+message DecutMoneyResp {
+
+}

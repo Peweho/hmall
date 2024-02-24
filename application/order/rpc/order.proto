@@ -6,6 +6,7 @@ option go_package="./pb";
 service Order {
   rpc FindOrderById(FindOrderByIdReq) returns (FindOrderByIdResp);
   rpc UpdateOrderStatus(UpdateOrderStatusReq) returns (UpdateOrderStatusResp);
+  rpc UpdateOrderStatusRollBack(UpdateOrderStatusReq) returns (UpdateOrderStatusResp);
   rpc CreateOrder(CreateOrderReq) returns (CreateOrderResp);
   rpc CreateOrderRollBack(CreateOrderReq) returns (CreateOrderResp);
 }

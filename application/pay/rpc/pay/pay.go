@@ -18,6 +18,7 @@ type (
 
 	Pay interface {
 		UpdatePayOrder(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error)
+		UpdatePayOrderRollBack(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error)
 	}
 
 	defaultPay struct {
@@ -34,4 +35,9 @@ func NewPay(cli zrpc.Client) Pay {
 func (m *defaultPay) UpdatePayOrder(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error) {
 	client := pb.NewPayClient(m.cli.Conn())
 	return client.UpdatePayOrder(ctx, in, opts...)
+}
+
+func (m *defaultPay) UpdatePayOrderRollBack(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error) {
+	client := pb.NewPayClient(m.cli.Conn())
+	return client.UpdatePayOrderRollBack(ctx, in, opts...)
 }

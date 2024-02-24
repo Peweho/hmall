@@ -26,3 +26,8 @@ func (s *PayServer) UpdatePayOrder(ctx context.Context, in *pb.UpdatePayOrderReq
 	l := logic.NewUpdatePayOrderLogic(ctx, s.svcCtx)
 	return l.UpdatePayOrder(in)
 }
+
+func (s *PayServer) UpdatePayOrderRollBack(ctx context.Context, in *pb.UpdatePayOrderReq) (*pb.UpdatePayOrderResp, error) {
+	l := logic.NewUpdatePayOrderRollBackLogic(ctx, s.svcCtx)
+	return l.UpdatePayOrderRollBack(in)
+}

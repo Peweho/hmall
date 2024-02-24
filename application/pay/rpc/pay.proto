@@ -5,6 +5,7 @@ option go_package="./pb";
 
 service Pay {
   rpc UpdatePayOrder (UpdatePayOrderReq) returns (UpdatePayOrderResp);
+  rpc UpdatePayOrderRollBack (UpdatePayOrderReq) returns (UpdatePayOrderResp);
 }
 
 message UpdatePayOrderReq {

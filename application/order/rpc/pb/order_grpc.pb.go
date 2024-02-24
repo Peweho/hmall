@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type OrderClient interface {
 	FindOrderById(ctx context.Context, in *FindOrderByIdReq, opts ...grpc.CallOption) (*FindOrderByIdResp, error)
 	UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error)
+	UpdateOrderStatusRollBack(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error)
 	CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderResp, error)
 	CreateOrderRollBack(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderResp, error)
 }
@@ -54,6 +55,15 @@ func (c *orderClient) UpdateOrderStatus(ctx context.Context, in *UpdateOrderStat
 	return out, nil
 }
 
+func (c *orderClient) UpdateOrderStatusRollBack(ctx context.Context, in *UpdateOrderStatusReq, opts ...grpc.CallOption) (*UpdateOrderStatusResp, error) {
+	out := new(UpdateOrderStatusResp)
+	err := c.cc.Invoke(ctx, "/service.Order/UpdateOrderStatusRollBack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *orderClient) CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderResp, error) {
 	out := new(CreateOrderResp)
 	err := c.cc.Invoke(ctx, "/service.Order/CreateOrder", in, out, opts...)
@@ -78,6 +88,7 @@ func (c *orderClient) CreateOrderRollBack(ctx context.Context, in *CreateOrderRe
 type OrderServer interface {
 	FindOrderById(context.Context, *FindOrderByIdReq) (*FindOrderByIdResp, error)
 	UpdateOrderStatus(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error)
+	UpdateOrderStatusRollBack(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error)
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderResp, error)
 	CreateOrderRollBack(context.Context, *CreateOrderReq) (*CreateOrderResp, error)
 	mustEmbedUnimplementedOrderServer()
@@ -92,6 +103,9 @@ func (UnimplementedOrderServer) FindOrderById(context.Context, *FindOrderByIdReq
 }
 func (UnimplementedOrderServer) UpdateOrderStatus(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrderStatus not implemented")
+}
+func (UnimplementedOrderServer) UpdateOrderStatusRollBack(context.Context, *UpdateOrderStatusReq) (*UpdateOrderStatusResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrderStatusRollBack not implemented")
 }
 func (UnimplementedOrderServer) CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
@@ -148,6 +162,24 @@ func _Order_UpdateOrderStatus_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Order_UpdateOrderStatusRollBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrderStatusReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServer).UpdateOrderStatusRollBack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Order/UpdateOrderStatusRollBack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServer).UpdateOrderStatusRollBack(ctx, req.(*UpdateOrderStatusReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Order_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateOrderReq)
 	if err := dec(in); err != nil {
@@ -198,6 +230,10 @@ var Order_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateOrderStatus",
 			Handler:    _Order_UpdateOrderStatus_Handler,
+		},
+		{
+			MethodName: "UpdateOrderStatusRollBack",
+			Handler:    _Order_UpdateOrderStatusRollBack_Handler,
 		},
 		{
 			MethodName: "CreateOrder",

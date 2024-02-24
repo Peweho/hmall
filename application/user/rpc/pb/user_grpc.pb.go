@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.24.3
-// source: pay.proto
+// source: user.proto
 
 package pb
 
@@ -22,8 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PayClient interface {
-	UpdatePayOrder(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error)
-	UpdatePayOrderRollBack(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error)
+	DecutMoney(ctx context.Context, in *DecutMoneyReq, opts ...grpc.CallOption) (*DecutMoneyResp, error)
+	DecutMoneyRollBack(ctx context.Context, in *DecutMoneyReq, opts ...grpc.CallOption) (*DecutMoneyResp, error)
 }
 
 type payClient struct {
@@ -34,18 +34,18 @@ func NewPayClient(cc grpc.ClientConnInterface) PayClient {
 	return &payClient{cc}
 }
 
-func (c *payClient) UpdatePayOrder(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error) {
-	out := new(UpdatePayOrderResp)
-	err := c.cc.Invoke(ctx, "/service.Pay/UpdatePayOrder", in, out, opts...)
+func (c *payClient) DecutMoney(ctx context.Context, in *DecutMoneyReq, opts ...grpc.CallOption) (*DecutMoneyResp, error) {
+	out := new(DecutMoneyResp)
+	err := c.cc.Invoke(ctx, "/service.Pay/DecutMoney", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *payClient) UpdatePayOrderRollBack(ctx context.Context, in *UpdatePayOrderReq, opts ...grpc.CallOption) (*UpdatePayOrderResp, error) {
-	out := new(UpdatePayOrderResp)
-	err := c.cc.Invoke(ctx, "/service.Pay/UpdatePayOrderRollBack", in, out, opts...)
+func (c *payClient) DecutMoneyRollBack(ctx context.Context, in *DecutMoneyReq, opts ...grpc.CallOption) (*DecutMoneyResp, error) {
+	out := new(DecutMoneyResp)
+	err := c.cc.Invoke(ctx, "/service.Pay/DecutMoneyRollBack", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (c *payClient) UpdatePayOrderRollBack(ctx context.Context, in *UpdatePayOrd
 // All implementations must embed UnimplementedPayServer
 // for forward compatibility
 type PayServer interface {
-	UpdatePayOrder(context.Context, *UpdatePayOrderReq) (*UpdatePayOrderResp, error)
-	UpdatePayOrderRollBack(context.Context, *UpdatePayOrderReq) (*UpdatePayOrderResp, error)
+	DecutMoney(context.Context, *DecutMoneyReq) (*DecutMoneyResp, error)
+	DecutMoneyRollBack(context.Context, *DecutMoneyReq) (*DecutMoneyResp, error)
 	mustEmbedUnimplementedPayServer()
 }
 
@@ -65,11 +65,11 @@ type PayServer interface {
 type UnimplementedPayServer struct {
 }
 
-func (UnimplementedPayServer) UpdatePayOrder(context.Context, *UpdatePayOrderReq) (*UpdatePayOrderResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdatePayOrder not implemented")
+func (UnimplementedPayServer) DecutMoney(context.Context, *DecutMoneyReq) (*DecutMoneyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecutMoney not implemented")
 }
-func (UnimplementedPayServer) UpdatePayOrderRollBack(context.Context, *UpdatePayOrderReq) (*UpdatePayOrderResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdatePayOrderRollBack not implemented")
+func (UnimplementedPayServer) DecutMoneyRollBack(context.Context, *DecutMoneyReq) (*DecutMoneyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DecutMoneyRollBack not implemented")
 }
 func (UnimplementedPayServer) mustEmbedUnimplementedPayServer() {}
 
@@ -84,38 +84,38 @@ func RegisterPayServer(s grpc.ServiceRegistrar, srv PayServer) {
 	s.RegisterService(&Pay_ServiceDesc, srv)
 }
 
-func _Pay_UpdatePayOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdatePayOrderReq)
+func _Pay_DecutMoney_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecutMoneyReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PayServer).UpdatePayOrder(ctx, in)
+		return srv.(PayServer).DecutMoney(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/service.Pay/UpdatePayOrder",
+		FullMethod: "/service.Pay/DecutMoney",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PayServer).UpdatePayOrder(ctx, req.(*UpdatePayOrderReq))
+		return srv.(PayServer).DecutMoney(ctx, req.(*DecutMoneyReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Pay_UpdatePayOrderRollBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdatePayOrderReq)
+func _Pay_DecutMoneyRollBack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecutMoneyReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PayServer).UpdatePayOrderRollBack(ctx, in)
+		return srv.(PayServer).DecutMoneyRollBack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/service.Pay/UpdatePayOrderRollBack",
+		FullMethod: "/service.Pay/DecutMoneyRollBack",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PayServer).UpdatePayOrderRollBack(ctx, req.(*UpdatePayOrderReq))
+		return srv.(PayServer).DecutMoneyRollBack(ctx, req.(*DecutMoneyReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -128,14 +128,14 @@ var Pay_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PayServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpdatePayOrder",
-			Handler:    _Pay_UpdatePayOrder_Handler,
+			MethodName: "DecutMoney",
+			Handler:    _Pay_DecutMoney_Handler,
 		},
 		{
-			MethodName: "UpdatePayOrderRollBack",
-			Handler:    _Pay_UpdatePayOrderRollBack_Handler,
+			MethodName: "DecutMoneyRollBack",
+			Handler:    _Pay_DecutMoneyRollBack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pay.proto",
+	Metadata: "user.proto",
 }
