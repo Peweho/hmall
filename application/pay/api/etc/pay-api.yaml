@@ -1,3 +1,35 @@
 Name: pay-api
 Host: 0.0.0.0
-Port: 8888
+Port: 8887
+
+Auth:
+  AccessSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  AccessExpire: 604800
+  RefreshSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  RefreshExpire: 2592000
+  RefreshAfter: 604800
+
+BizRedis:
+  Host: 192.168.92.201:6379
+  Pass:
+  Type: node
+
+DB:
+  DataSource: "root:123@tcp(192.168.92.201:3307)/hmall?parseTime=true&loc=Local&charset=utf8mb4"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600
+
+OrderRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: order.rpc
+  NonBlock: true
+
+UserRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: user.rpc
+  NonBlock: true
