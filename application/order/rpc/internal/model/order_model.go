@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"gorm.io/gorm"
-	"hmall/application/order/rpc/internal/utils"
 )
 
 type OrderModel struct {
@@ -16,10 +15,12 @@ func NewOrderModel(db *gorm.DB) *OrderModel {
 	}
 }
 
-func (m *OrderModel) UpdateOrderStatusById(ctx context.Context, id int64) error {
-	return m.db.WithContext(ctx).Model(&OrderPO{}).Where("id = ?", id).Updates(map[string]any{"status": utils.Paied}).Error
+// 更改订单状态
+func (m *OrderModel) UpdateOrderStatusById(ctx context.Context, id int64, status int) error {
+	return m.db.WithContext(ctx).Model(&OrderPO{}).Where("id = ?", id).Updates(map[string]any{"status": status}).Error
 }
 
+// 根据Id查找订单
 func (m *OrderModel) FindOrderById(ctx context.Context, id int64) (*OrderPO, error) {
 	var order OrderPO
 	err := m.db.WithContext(ctx).Where("id = ?", id).Take(&order).Error

@@ -2,10 +2,14 @@ package logic
 
 import (
 	"context"
-	"github.com/zeromicro/go-zero/core/threading"
-	"hmall/application/order/rpc/internal/utils"
-
+	"database/sql"
+	"github.com/dtm-labs/client/dtmcli"
+	"github.com/dtm-labs/client/dtmgrpc"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"hmall/application/order/rpc/internal/svc"
+	"hmall/application/order/rpc/internal/utils"
 	"hmall/application/order/rpc/pb"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -26,16 +30,19 @@ func NewUpdateOrderStatusLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *UpdateOrderStatusLogic) UpdateOrderStatus(in *pb.UpdateOrderStatusReq) (*pb.UpdateOrderStatusResp, error) {
-	threading.NewWorkerGroup(func() {
-		key := utils.CacheKey(int(in.Id))
-		if _, err := l.svcCtx.BizRedis.Del(key); err != nil {
-			logx.Errorf("BizRedis.Del: %v, error: %v", key, err)
+	barrier, err := dtmgrpc.BarrierFromGrpc(l.ctx)
+	db, err := sqlx.NewMysql(l.svcCtx.Config.DB.DataSource).RawDB()
+	if err = barrier.CallWithDB(db, func(tx *sql.Tx) error {
+		if err2 := l.svcCtx.OrderModel.UpdateOrderStatusById(l.ctx, in.Id, utils.Paied); err2 != nil {
+			logx.Errorf("OrderModel.UpdateOrderStatusById: %v , error: %v", in.Id, err2)
+			return err2
 		}
-	}, 1)
-	// 调用mq服务修改
-	pusherLogic := NewPusherLogic(l.ctx, l.svcCtx)
-	if err := pusherLogic.UpdateStatus(int(in.Id)); err != nil {
-		return nil, err
+		return nil
+	}); err != nil {
+		if err == dtmcli.ErrFailure {
+			return nil, status.Error(codes.Aborted, dtmcli.ResultFailure)
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &pb.UpdateOrderStatusResp{}, nil
 }

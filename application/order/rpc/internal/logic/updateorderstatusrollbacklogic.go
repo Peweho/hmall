@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"hmall/application/order/rpc/internal/utils"
 
 	"hmall/application/order/rpc/internal/svc"
 	"hmall/application/order/rpc/pb"
@@ -24,7 +25,10 @@ func NewUpdateOrderStatusRollBackLogic(ctx context.Context, svcCtx *svc.ServiceC
 }
 
 func (l *UpdateOrderStatusRollBackLogic) UpdateOrderStatusRollBack(in *pb.UpdateOrderStatusReq) (*pb.UpdateOrderStatusResp, error) {
-	// todo: add your logic here and delete this line
+	if err := l.svcCtx.OrderModel.UpdateOrderStatusById(l.ctx, in.Id, utils.NotPayment); err != nil {
+		logx.Errorf("OrderModel.UpdateOrderStatusById: %v , error: %v", in.Id, err)
+		return nil, err
+	}
 
 	return &pb.UpdateOrderStatusResp{}, nil
 }
