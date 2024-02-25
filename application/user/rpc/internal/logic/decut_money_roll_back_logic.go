@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-
 	"hmall/application/user/rpc/internal/svc"
 	"hmall/application/user/rpc/pb"
 
@@ -24,7 +23,10 @@ func NewDecutMoneyRollBackLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 }
 
 func (l *DecutMoneyRollBackLogic) DecutMoneyRollBack(in *pb.DecutMoneyReq) (*pb.DecutMoneyResp, error) {
-	// todo: add your logic here and delete this line
+	if err := l.svcCtx.UserModel.UpdateBalanceRollBack(l.ctx, in.Uid, in.Amount); err != nil {
+		logx.Errorf("UserModel.UpdateBalanceRollBack: %v, error: %v", in.Uid, err)
+		return nil, err
+	}
 
 	return &pb.DecutMoneyResp{}, nil
 }

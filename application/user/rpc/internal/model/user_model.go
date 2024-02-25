@@ -15,24 +15,27 @@ func NewEmployeeGormModel(db *gorm.DB) *UserModel {
 	}
 }
 
-// 根据username查询信息
-func (m *UserModel) FindUserByName(ctx context.Context, userName string) (UserDTO, error) {
-	var res UserDTO
-	err := m.db.WithContext(ctx).Where("username = ?", userName).Find(&res).Error
-	return res, err
-}
-
-// 根据id查询信息
-func (m *UserModel) FindUserById(ctx context.Context, id int) (UserDTO, error) {
-	var res UserDTO
-	err := m.db.WithContext(ctx).Where("id = ?", id).Find(&res).Error
+// 根据id查询密码
+func (m *UserModel) FindUserPwdById(ctx context.Context, id int64) (string, error) {
+	var res string
+	err := m.db.WithContext(ctx).Model(&UserDTO{}).Select("password").Where("id = ?", id).Find(&res).Error
 	return res, err
 }
 
 // 修改金额
-func (m *UserModel) UpdateBalance(ctx context.Context, id int, balance int) error {
+func (m *UserModel) UpdateBalance(ctx context.Context, id int64, balance int64) (int, error) {
+	res := 0
+	err := m.db.WithContext(ctx).
+		Model(&UserDTO{}).Select("balance").
+		Where("id = ?", id).
+		Update("balance", gorm.Expr("balance - ?", balance)).Find(&res).Error
+	return res, err
+}
+
+// 恢复金额
+func (m *UserModel) UpdateBalanceRollBack(ctx context.Context, id int64, balance int64) error {
 	return m.db.WithContext(ctx).
 		Model(&UserDTO{}).
 		Where("id = ?", id).
-		Updates(map[string]any{"balance": balance}).Error
+		Update("balance", gorm.Expr("balance + ?", balance)).Error
 }
