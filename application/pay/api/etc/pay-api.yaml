@@ -33,3 +33,10 @@ UserRPC:
       - 192.168.92.201:2379
     Key: user.rpc
   NonBlock: true
+
+PayRPC:
+  Etcd:
+    Hosts:
+      - 192.168.92.201:2379
+    Key: user.rpc
+  NonBlock: true

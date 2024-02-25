@@ -3,7 +3,7 @@ syntax = "proto3";
 package service;
 option go_package="./pb";
 
-service Pay {
+service User {
   rpc DecutMoney (DecutMoneyReq) returns (DecutMoneyResp);
   rpc DecutMoneyRollBack (DecutMoneyReq) returns (DecutMoneyResp);
 }

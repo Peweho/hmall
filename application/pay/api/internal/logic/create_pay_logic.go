@@ -42,7 +42,7 @@ func (l *CreatePayLogic) CreatePay(req *types.CreatePayReq) error {
 		Status:           types.NotPay,
 		Pay_success_time: nil,
 		Pay_over_time:    time.Unix(time.Now().Unix()+types.OverTime, 0),
-		Is_delete:        types.NotDelete,
+		Is_delete:        []byte(types.NotDelete),
 	}
 
 	//创建

@@ -10,6 +10,7 @@ type CreatePayReq struct {
 }
 
 type UseBalancePayReq struct {
-	Id int    `path:"id"`
-	Pw string `json:"pw"`
+	Id  int    `path:"id"`
+	Uid int64  `json:"id"`
+	Pw  string `json:"pw"`
 }

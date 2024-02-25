@@ -21,7 +21,7 @@ type PayPO struct {
 	UpdatedAt        time.Time `gorm:"column:update_time"`
 	Creater          int64
 	Updater          int64
-	Is_delete        int
+	Is_delete        []byte
 }
 
 func (m *PayPO) TableName() string {

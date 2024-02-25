@@ -15,8 +15,8 @@ const (
 
 // 支付单逻辑删除
 const (
-	NotDelete = iota
-	Deleted
+	NotDelete = "x00"
+	Delete    = "x01"
 )
 
 const OverTime = 10 * 60 * 1

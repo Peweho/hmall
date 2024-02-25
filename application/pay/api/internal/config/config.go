@@ -21,4 +21,5 @@ type Config struct {
 	}
 	UserRPC  zrpc.RpcClientConf
 	OrderRPC zrpc.RpcClientConf
+	PayRPC   zrpc.RpcClientConf
 }

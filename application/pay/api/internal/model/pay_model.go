@@ -18,3 +18,11 @@ func NewPayModel(db *gorm.DB) *PayModel {
 func (m *PayModel) CreatePayOrder(ctx context.Context, pay *PayPO) error {
 	return m.db.WithContext(ctx).Create(pay).Error
 }
+
+func (m *PayModel) SelPayOrderStatusIsDel(ctx context.Context, payId int) (*PayPO, error) {
+	var res PayPO
+	err := m.db.WithContext(ctx).
+		Select("amount", "status", "is_delete").
+		Where("id = ?", payId).Find(&res).Error
+	return &res, err
+}
