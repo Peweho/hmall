@@ -18,15 +18,6 @@ message UpdatePayOrderReq {
       Balance = 5;
   }
   PayTypeEnum PayType = 1;
-
-  enum PayStatus {
-    Wait_Commit  = 0;
-    Wait_Pay = 1;
-    PayTimeOut = 2;
-    Pay_Success = 3;
-  }
-  PayStatus Status = 2;
-  string PayTime = 4;
 }
 
 message UpdatePayOrderResp {
