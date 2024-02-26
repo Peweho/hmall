@@ -1,0 +1,23 @@
+Name: search-api
+Host: 0.0.0.0
+Port: 8889
+
+Auth:
+  AccessSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  AccessExpire: 604800
+  RefreshSecret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  RefreshExpire: 2592000
+  RefreshAfter: 604800
+
+Es:
+  Addresses:
+    - https://192.168.92.201:9200/
+  Username: elastic
+  Password: _B_rMcR*R27IS7NqhG8=
+  Fingerprint: 85ef8a7af6a02bed2382dcd65c7bbf52c990acaf16319e3b83935c69df083faf
+
+DB:
+  DataSource: "root:123@tcp(192.168.92.201:3307)/hmall?parseTime=true&loc=Local&charset=utf8mb4"
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 3600
