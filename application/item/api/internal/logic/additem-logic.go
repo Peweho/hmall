@@ -2,11 +2,12 @@ package logic
 
 import (
 	"context"
+	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/item/api/internal/model"
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
-
-	"github.com/zeromicro/go-zero/core/logx"
+	"hmall/application/item/api/internal/util"
+	"log"
 )
 
 type AdditemLogic struct {
@@ -25,7 +26,6 @@ func NewAdditemLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AdditemLo
 
 func (l *AdditemLogic) Additem(req *types.ItemReqAndResp) error {
 	item := &model.ItemDTO{
-		Id:           int64(req.Id),
 		Brand:        req.Brand,
 		Category:     req.Category,
 		CommentCount: int64(req.CommentCount),
@@ -38,11 +38,16 @@ func (l *AdditemLogic) Additem(req *types.ItemReqAndResp) error {
 		Status:       int64(req.Status),
 		Stock:        int64(req.Stock),
 	}
+
 	err := l.svcCtx.ItemModel.InserItem(l.ctx, item)
 	if err != nil {
 		logx.Errorf("ItemModel.InserItem: %v, error: %v", *item, err)
 		return err
 	}
-
+	log.Println(item.Id)
+	pusherSearch := util.NewPusherSearchLogic(l.ctx, l.svcCtx)
+	if err := pusherSearch.PusherSearch(item); err != nil {
+		logx.Errorf(" pusherSearch.PusherSearch: %v, error: %v", item, err)
+	}
 	return nil
 }

@@ -2,7 +2,7 @@ package svc
 
 import (
 	"github.com/elastic/go-elasticsearch/v8"
-	"hmall/application/search/api/internal/config"
+	"hmall/application/search/mq/internal/config"
 	"log"
 )
 

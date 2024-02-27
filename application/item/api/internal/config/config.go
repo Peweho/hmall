@@ -24,4 +24,8 @@ type Config struct {
 		Brokers []string
 		Topic   string
 	}
+	KqPusherSearch struct {
+		Brokers []string
+		Topic   string
+	}
 }

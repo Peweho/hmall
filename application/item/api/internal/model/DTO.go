@@ -8,15 +8,15 @@ type ItemDTO struct {
 	CommentCount int64
 	Id           int64
 	Image        string
-	IsAD         bool
+	IsAD         bool `gorm:"column:isAD"`
 	Name         string
 	Price        int64
 	Sold         int64
 	Spec         string
 	Status       int64
 	Stock        int64
-	CreatedAt    time.Time `gorm:"create_time"`
-	UpdateTime   time.Time `gorm:"update_time"`
+	CreatedAt    time.Time `gorm:"column:create_time"`
+	UpdatedAt    time.Time `gorm:"column:update_time"`
 	Creater      int64
 	Updater      int64
 }

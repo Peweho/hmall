@@ -8,7 +8,6 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/search/api/internal/svc"
 	"hmall/application/search/api/internal/types"
-	"log"
 	"strings"
 )
 
@@ -29,37 +28,58 @@ func NewSearchListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Search
 func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.SearchListResp, err error) {
 	//Todo: 根据关键字，带有限定条件的聚合
 	//Todo: 实现分页和排序
-	/*分类：
-	1、条件齐全；
-	2、缺少关键字；
-	3、缺少品牌；如果有key聚合品牌 should，
-	4、缺少分类
-	5、缺少价格
-	*/
 	//假设条件齐全
 	query := map[string]any{
 		"query": map[string]any{
 			"bool": map[string]any{
 				"must": []map[string]any{
-					{"match": map[string]any{"name": req.Key}},
-					{"match": map[string]any{"brand": req.Brand}},
+					//{"match": map[string]any{"name": req.Key}},
+					//{"match": map[string]any{"brand": req.Brand}},
 				},
 				"should": []map[string]any{},
 				"filter": []map[string]any{
-					{"term": map[string]any{"category": map[string]any{"value": req.Category}}},
-					{"range": map[string]any{"price": map[string]any{"gte": req.MinPrice, "lte": req.MaxPrice}}},
+					//{"term": map[string]any{"category": map[string]any{"value": req.Category}}},
+					//{"range": map[string]any{"price": map[string]any{"gte": req.MinPrice, "lte": req.MaxPrice}}},
 				},
 			},
 		},
 		"highlight": map[string]any{
-			"fields": map[string]any{"name": map[string]any{"pre_tags": "<em>", "post_tags": "</em>"}},
+			"fields": []map[string]any{
+				//{"name": map[string]any{"pre_tags": "<em>", "post_tags": "</em>"}},
+			},
 		},
 	}
+	//分类：
+	//关键字
+	if req.Key != "" {
+		query["query"].(map[string]any)["bool"].(map[string]any)["must"] = append(
+			query["query"].(map[string]any)["bool"].(map[string]any)["must"].([]map[string]any),
+			map[string]any{"match": map[string]any{"name": req.Key}})
+
+		query["highlight"].(map[string]any)["fields"] = append(
+			query["highlight"].(map[string]any)["fields"].([]map[string]any),
+			map[string]any{"name": map[string]any{"pre_tags": "<em>", "post_tags": "</em>"}})
+	}
+	//品牌；如果有key聚合品牌 should，
+	//分类
+	if req.Category != "" {
+		query["query"].(map[string]any)["bool"].(map[string]any)["filter"] = append(
+			query["query"].(map[string]any)["bool"].(map[string]any)["filter"].([]map[string]any),
+			map[string]any{"term": map[string]any{"category": map[string]any{"value": req.Category}}})
+	}
+	//价格
+	if req.MinPrice != 0 || req.MaxPrice != 0 {
+		query["query"].(map[string]any)["bool"].(map[string]any)["filter"] = append(
+			query["query"].(map[string]any)["bool"].(map[string]any)["filter"].([]map[string]any),
+			map[string]any{"range": map[string]any{"price": map[string]any{"gte": req.MinPrice, "lte": req.MaxPrice}}})
+	}
+	//序列化query
 	marshal, err := json.Marshal(query)
 	if err != nil {
 		logx.Errorf("json.Marshal: %v, error: %v", query, err)
 		return nil, err
 	}
+	//向es发起请求
 	response, err := esapi.SearchRequest{
 		Index: []string{types.EsItemsIndex},
 		Body:  bytes.NewReader(marshal),
@@ -69,6 +89,7 @@ func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.Sear
 		return nil, err
 	}
 
+	//处理数据
 	start := strings.Index(response.String(), "]")
 	respStr := response.String()[start+1:]
 
@@ -78,48 +99,19 @@ func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.Sear
 		logx.Errorf("json.Unmarshal: %v, error: %v", respStr, err)
 		return nil, err
 	}
-	log.Println(res)
 
 	//构造返回对象
 	//1、商品
 	items := make([]types.SearchItemDTO, 0, len(res.Hits.HitDetails))
 	for i, _ := range res.Hits.HitDetails {
+		if req.Key != "" {
+			res.Hits.HitDetails[i].Source.Name = res.Hits.HitDetails[i].Highlight.Name[0]
+		}
 		items = append(items, res.Hits.HitDetails[i].Source)
 	}
 	return &types.SearchListResp{
 		Items: items,
 	}, nil
-
-	//item, err := l.svcCtx.ItemModel.InserItem(l.ctx)
-	//for _, val := range *item {
-	//	it := types.SearchItemDTO{
-	//		Id:       val.Id,
-	//		Category: val.Category,
-	//		Status:   val.Status,
-	//		Stock:    val.Stock,
-	//		Spec:     val.Spec,
-	//		Sold:     val.Sold,
-	//		Name:     val.Name,
-	//		Brand:    val.Brand,
-	//	}
-	//	marshal, err := json.Marshal(it)
-	//	if err != nil {
-	//		logx.Errorf("json.Marshal: %v, error: %v", it, err)
-	//		return nil, err
-	//	}
-	//	_, err = esapi.IndexRequest{
-	//		Index:      "items",
-	//		DocumentID: strconv.Itoa(int(val.Id)),
-	//		Body:       bytes.NewReader(marshal),
-	//		Refresh:    "true",
-	//	}.Do(context.Background(), l.svcCtx.Es)
-	//	if err != nil {
-	//		logx.Errorf("esapi.IndexRequest: %v, error: %v", it, err)
-	//		return nil, err
-	//	}
-	//}
-	//
-	//return nil, nil
 }
 
 type Response struct {

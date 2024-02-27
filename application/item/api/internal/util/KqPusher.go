@@ -24,7 +24,7 @@ func (l *PusherLogic) Pusher(id string) error {
 
 	//......业务逻辑....
 
-	if err := l.svcCtx.KqPusherClient.Push(id); err != nil {
+	if err := l.svcCtx.KqPusherClientUpdateCache.Push(id); err != nil {
 		logx.Errorf("KqPusherClient Push Error , err :%v", err)
 		return err
 	}

@@ -12,12 +12,13 @@ import (
 )
 
 type ServiceContext struct {
-	Config         config.Config
-	ItemRPC        item.Item
-	BizRedis       *redis.Redis
-	Db             *orm.DB
-	ItemModel      *model.ItemModel
-	KqPusherClient *kq.Pusher
+	Config                    config.Config
+	ItemRPC                   item.Item
+	BizRedis                  *redis.Redis
+	Db                        *orm.DB
+	ItemModel                 *model.ItemModel
+	KqPusherClientUpdateCache *kq.Pusher
+	KqPusherSearch            *kq.Pusher
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -37,11 +38,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		panic(err)
 	}
 	return &ServiceContext{
-		Config:         c,
-		ItemRPC:        item.NewItem(itemRPC),
-		BizRedis:       rds,
-		Db:             db,
-		ItemModel:      model.NewItemModel(db.DB),
-		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
+		Config:                    c,
+		ItemRPC:                   item.NewItem(itemRPC),
+		BizRedis:                  rds,
+		Db:                        db,
+		ItemModel:                 model.NewItemModel(db.DB),
+		KqPusherClientUpdateCache: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
+		KqPusherSearch:            kq.NewPusher(c.KqPusherSearch.Brokers, c.KqPusherSearch.Topic),
 	}
 }

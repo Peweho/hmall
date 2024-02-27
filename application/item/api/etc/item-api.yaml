@@ -32,3 +32,8 @@ KqPusherConf:
     - 192.168.92.201:9092
   Topic: topic-hmall-UpdateCache
 
+KqPusherSearch:
+  Brokers:
+    - 192.168.92.201:9092
+  Topic: topic-hmall-AddSearch
+

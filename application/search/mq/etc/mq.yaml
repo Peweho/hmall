@@ -1,0 +1,22 @@
+Name: mq-api
+Host: 0.0.0.0
+Port: 8890
+
+#kq
+KqConsumerConf:
+  Name: kqConsumer
+  Brokers:
+    - 192.168.92.201:9092
+  Group: kqConsumer
+  Topic: topic-hmall-AddSearch
+  Offset: last
+  Consumers: 1
+  Processors: 1
+
+#与Search是同一es
+Es:
+  Addresses:
+    - https://192.168.92.201:9200/
+  Username: elastic
+  Password: _B_rMcR*R27IS7NqhG8=
+  Fingerprint: 85ef8a7af6a02bed2382dcd65c7bbf52c990acaf16319e3b83935c69df083faf
