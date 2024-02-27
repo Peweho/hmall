@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"gorm.io/gorm"
+	"hmall/application/item/api/internal/types"
 )
 
 type ItemModel struct {
@@ -20,11 +21,13 @@ func (m *ItemModel) InserItem(ctx context.Context, item *ItemDTO) error {
 }
 
 // 扣减库存
-func (m *ItemModel) DecutStock(ctx context.Context, id int, num int) error {
-	return m.db.WithContext(ctx).
+func (m *ItemModel) DecutStock(ctx context.Context, id int, num int) (*ItemDTO, error) {
+	var item ItemDTO
+	err := m.db.WithContext(ctx).
 		Model(&ItemDTO{}).
 		Where("id = ?", id).
-		Update("stock", gorm.Expr("stock - ?", num)).Error
+		Update("stock", gorm.Expr("stock - ?", num)).Find(&item).Error
+	return &item, err
 }
 
 // 根据ID删除商品
@@ -51,9 +54,18 @@ func (m *ItemModel) UpdateItemById(ctx context.Context, item ItemDTO) error {
 }
 
 // 根据id更新商品状态
-func (m *ItemModel) UpdateItemStatusById(ctx context.Context, id int, status int) error {
-	return m.db.WithContext(ctx).
+func (m *ItemModel) UpdateItemStatusById(ctx context.Context, id int, status int) (*ItemDTO, error) {
+	var item ItemDTO
+	err := m.db.WithContext(ctx).
 		Model(&ItemDTO{}).
 		Where("id = ?", id).
 		Updates(map[string]any{"status": status}).Error
+	if err != nil {
+		return nil, err
+	}
+	err = m.db.WithContext(ctx).
+		Omit(types.Field...).
+		Where("id = ?", id).
+		Find(&item).Error
+	return &item, err
 }

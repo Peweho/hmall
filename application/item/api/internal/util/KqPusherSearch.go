@@ -22,20 +22,28 @@ func NewPusherSearchLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Push
 	}
 }
 
-func (l *PusherSearchLogic) PusherSearch(item *model.ItemDTO) error {
-	searchItem := &SearchItemDTO{
-		Brand:        item.Brand,
-		Category:     item.Category,
-		CommentCount: item.CommentCount,
-		Image:        item.Image,
-		IsAD:         item.IsAD,
-		Id:           item.Price,
-		Price:        item.Price,
-		Sold:         item.Sold,
-		Spec:         item.Spec,
-		Status:       item.Status,
-		Stock:        item.Stock,
-		Name:         item.Name,
+type SearchkKqMsg struct {
+	Code int
+	Date SearchItemDTO
+}
+
+func (l *PusherSearchLogic) PusherSearch(code int, item *model.ItemDTO) error {
+	searchItem := &SearchkKqMsg{
+		Code: code,
+		Date: SearchItemDTO{
+			Brand:        item.Brand,
+			Category:     item.Category,
+			CommentCount: item.CommentCount,
+			Image:        item.Image,
+			IsAD:         item.IsAD,
+			Id:           item.Id,
+			Price:        item.Price,
+			Sold:         item.Sold,
+			Spec:         item.Spec,
+			Status:       item.Status,
+			Stock:        item.Stock,
+			Name:         item.Name,
+		},
 	}
 	marshal, err := json.Marshal(searchItem)
 	if err != nil {

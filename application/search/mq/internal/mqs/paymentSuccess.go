@@ -7,6 +7,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/search/mq/internal/svc"
+	"hmall/application/search/mq/internal/types"
 	"log"
 	"strconv"
 )
@@ -25,24 +26,41 @@ func NewPaymentSuccess(ctx context.Context, svcCtx *svc.ServiceContext) *Payment
 	}
 }
 
+type SearchkKqMsg struct {
+	Code int
+	Date SearchItemDTO
+}
+
 func (l *PaymentSuccess) Consume(_, item string) error {
-	var res SearchItemDTO
+	var res SearchkKqMsg
 	if err := json.Unmarshal([]byte(item), &res); err != nil {
 		logx.Errorf("json.Unmarshal: %v,error : %v", item, err)
 		return err
 	}
 
-	resp, err := esapi.IndexRequest{
-		Index:      "items",
-		DocumentID: strconv.Itoa(int(res.Id)),
-		Body:       bytes.NewReader([]byte(item)),
-		Refresh:    "true",
-	}.Do(context.Background(), l.svcCtx.Es)
-	if err != nil {
-		logx.Errorf("esapi.IndexRequest.Do, error : %v", err)
-		return err
+	if res.Code == types.KqUpdate {
+		resp, err := esapi.IndexRequest{
+			Index:      "items",
+			DocumentID: strconv.Itoa(int(res.Date.Id)),
+			Body:       bytes.NewReader([]byte(item)),
+			Refresh:    "true",
+		}.Do(context.Background(), l.svcCtx.Es)
+		if err != nil {
+			logx.Errorf("esapi.IndexRequest.Do, error : %v", err)
+			return err
+		}
+		log.Println(resp)
+	} else {
+		resp, err := esapi.DeleteRequest{
+			Index:      "items",
+			DocumentID: strconv.Itoa(int(res.Date.Id)),
+		}.Do(context.Background(), l.svcCtx.Es)
+		if err != nil {
+			logx.Errorf("esapi.IndexRequest.Do, error : %v", err)
+			return err
+		}
+		log.Println(resp)
 	}
-	log.Println(resp)
 	return nil
 }
 

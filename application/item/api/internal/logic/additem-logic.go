@@ -46,7 +46,7 @@ func (l *AdditemLogic) Additem(req *types.ItemReqAndResp) error {
 	}
 	log.Println(item.Id)
 	pusherSearch := util.NewPusherSearchLogic(l.ctx, l.svcCtx)
-	if err := pusherSearch.PusherSearch(item); err != nil {
+	if err := pusherSearch.PusherSearch(types.KqUpdate, item); err != nil {
 		logx.Errorf(" pusherSearch.PusherSearch: %v, error: %v", item, err)
 	}
 	return nil
