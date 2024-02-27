@@ -8,6 +8,7 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/search/mq/internal/svc"
 	"log"
+	"strconv"
 )
 
 type PaymentSuccess struct {
@@ -33,7 +34,7 @@ func (l *PaymentSuccess) Consume(_, item string) error {
 
 	resp, err := esapi.IndexRequest{
 		Index:      "items",
-		DocumentID: "54", //strconv.Itoa(int(res.Id)),
+		DocumentID: strconv.Itoa(int(res.Id)),
 		Body:       bytes.NewReader([]byte(item)),
 		Refresh:    "true",
 	}.Do(context.Background(), l.svcCtx.Es)
