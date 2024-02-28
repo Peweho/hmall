@@ -34,9 +34,8 @@ func (l *CreateOrderRollBackLogic) CreateOrderRollBack(in *pb.CreateOrderReq) (*
 	//	//!!!一般数据库不会错误不需要dtm回滚，就让他一直重试，这时候就不要返回codes.Aborted, dtmcli.ResultFailure 就可以了，具体自己把控!!!
 	//	return nil, status.Error(codes.Internal, err.Error())
 	//}
-	log.Println("开始barrier.CallWithDB")
 	//if err = barrier.CallWithDB(db, func(tx *sql.Tx) error {
-	log.Println("开始回滚")
+
 	// 1、查询用户最新创建的订单id
 	orderId, err := l.svcCtx.OrderModel.FindNewOrderIdByUser(l.ctx, in.UserId)
 	if err != nil {
@@ -45,24 +44,24 @@ func (l *CreateOrderRollBackLogic) CreateOrderRollBack(in *pb.CreateOrderReq) (*
 	}
 	log.Println("orderId:%v", orderId)
 	//2、删除三张表
-	var (
-		err1 error
-		err2 error
-		err3 error
-	)
+	chErr := make(chan error, 4) //接受错误
+
 	wg := &sync.WaitGroup{}
 	wg.Add(4)
 	// 删除订单表
 	threading.GoSafe(func() {
 		defer wg.Done()
-		if err1 = l.svcCtx.OrderModel.DelOrderById(l.ctx, orderId); err1 != nil {
+		err1 := l.svcCtx.OrderModel.DelOrderById(l.ctx, orderId)
+		if err1 != nil {
 			logx.Errorf("OrderModel.DelOrderById: %v, error: %v", orderId, err1)
 		}
+		chErr <- err1
 	})
 	//删缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
 		_, _ = l.svcCtx.BizRedis.Del(utils.CacheKey(int(orderId)))
+		chErr <- nil
 	})
 	// 删除订单详情表
 	threading.GoSafe(func() {
@@ -71,27 +70,27 @@ func (l *CreateOrderRollBackLogic) CreateOrderRollBack(in *pb.CreateOrderReq) (*
 		for _, v := range in.Details {
 			itemIds = append(itemIds, v.ItemId)
 		}
-		if err2 = l.svcCtx.OrderModel.DelOrderDetailById(l.ctx, orderId, itemIds); err2 != nil {
+		err2 := l.svcCtx.OrderModel.DelOrderDetailById(l.ctx, orderId, itemIds)
+		if err2 != nil {
 			logx.Errorf("OrderModel.DelOrderDetailById: %v, error: %v", orderId, err2)
 		}
+		chErr <- err2
 	})
 	//删除订单物流表
 	threading.GoSafe(func() {
 		defer wg.Done()
-		if err3 = l.svcCtx.OrderModel.DelOrderLogisticById(l.ctx, orderId); err3 != nil {
+		err3 := l.svcCtx.OrderModel.DelOrderLogisticById(l.ctx, orderId)
+		if err3 != nil {
 			logx.Errorf("OrderModel.DelOrderLogisticById: %v, error: %v", orderId, err3)
 		}
+		chErr <- err3
 	})
 	wg.Wait()
-
-	if err1 != nil {
-		return nil, err1
-	}
-	if err2 != nil {
-		return nil, err2
-	}
-	if err3 != nil {
-		return nil, err3
+	close(chErr)
+	for e := range chErr {
+		if e != nil {
+			return nil, e
+		}
 	}
 	//}); err != nil {
 	//	return nil, err

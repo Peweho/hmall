@@ -19,10 +19,6 @@ type Config struct {
 		MaxIdleConns int `json:",default=100"`
 		MaxLifetime  int `json:",default=3600"`
 	}
-	KqPusherConf struct {
-		Brokers []string
-		Topic   string
-	}
 	AddressRPC zrpc.RpcClientConf
 	ItemRPC    zrpc.RpcClientConf
 	OrderRPC   zrpc.RpcClientConf

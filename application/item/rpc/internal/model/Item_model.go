@@ -34,9 +34,11 @@ func (m *ItemModel) DecutStock(ctx context.Context, id string, num int64) (*Item
 }
 
 // 恢复库存
-func (m *ItemModel) AddStock(ctx context.Context, id string, num int64) error {
-	return m.db.WithContext(ctx).
+func (m *ItemModel) AddStock(ctx context.Context, id string, num int64) (*ItemDTO, error) {
+	var res ItemDTO
+	err := m.db.WithContext(ctx).
 		Model(&ItemDTO{}).
 		Where("id = ?", id).
-		Update("stock", gorm.Expr("stock + ?", num)).Error
+		Update("stock", gorm.Expr("stock + ?", num)).Find(&res).Error
+	return &res, err
 }

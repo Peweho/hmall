@@ -1,7 +1,6 @@
 package svc
 
 import (
-	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/zrpc"
 	"hmall/application/address/rpc/address"
@@ -15,15 +14,14 @@ import (
 )
 
 type ServiceContext struct {
-	Config         config.Config
-	BizRedis       *redis.Redis
-	Db             *orm.DB
-	OrderModel     *model.OrderModel
-	KqPusherClient *kq.Pusher
-	AddressRPC     address.Address
-	ItemRPC        item.Item
-	OrderRPC       order.Order
-	CartRPC        carts.Carts
+	Config     config.Config
+	BizRedis   *redis.Redis
+	Db         *orm.DB
+	OrderModel *model.OrderModel
+	AddressRPC address.Address
+	ItemRPC    item.Item
+	OrderRPC   order.Order
+	CartRPC    carts.Carts
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -46,14 +44,13 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	orderRPC := zrpc.MustNewClient(c.OrderRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	cartRPC := zrpc.MustNewClient(c.CartRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	return &ServiceContext{
-		Config:         c,
-		BizRedis:       rds,
-		Db:             db,
-		OrderModel:     model.NewOrderModel(db.DB),
-		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
-		AddressRPC:     address.NewAddress(addressRPC),
-		ItemRPC:        item.NewItem(itemRPC),
-		OrderRPC:       order.NewOrder(orderRPC),
-		CartRPC:        carts.NewCarts(cartRPC),
+		Config:     c,
+		BizRedis:   rds,
+		Db:         db,
+		OrderModel: model.NewOrderModel(db.DB),
+		AddressRPC: address.NewAddress(addressRPC),
+		ItemRPC:    item.NewItem(itemRPC),
+		OrderRPC:   order.NewOrder(orderRPC),
+		CartRPC:    carts.NewCarts(cartRPC),
 	}
 }

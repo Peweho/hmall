@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"gorm.io/gorm"
+	"hmall/application/order/api/internal/types"
 )
 
 type OrderModel struct {
@@ -25,4 +26,8 @@ func (m *OrderModel) AddOrderDetail(ctx context.Context, orderDetail []map[strin
 
 func (m *OrderModel) AddOrderLogistics(ctx context.Context, orderLogistics map[string]any) error {
 	return m.db.WithContext(ctx).Model(&OrderLogisticsPO{}).Create(orderLogistics).Error
+}
+
+func (m *OrderModel) UpdateOrderStatusById(ctx context.Context, id string) error {
+	return m.db.WithContext(ctx).Model(&OrderPO{}).Where("id = ?", id).Updates(map[string]any{"status": types.Paied}).Error
 }

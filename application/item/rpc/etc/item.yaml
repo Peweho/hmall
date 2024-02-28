@@ -15,3 +15,8 @@ BizRedis:
   Host: 192.168.92.201:6379
   Pass:
   Type: node
+
+KqPusherSearch:
+  Brokers:
+    - 192.168.92.201:9092
+  Topic: topic-hmall-AddSearch

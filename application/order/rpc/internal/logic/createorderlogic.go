@@ -42,9 +42,12 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 		itemResp    *item.FindItemByIdsResp
 		addressResp *address.FindAdressByIdResp
 		usr         = in.UserId
-		err1        error
-		err2        error
 	)
+	chErr := make(chan error, 2) //接受错误
+	//接收返回结果
+	itemRespCh := make(chan *item.FindItemByIdsResp, 1)
+	addressRespCh := make(chan *address.FindAdressByIdResp, 1)
+
 	barrier, err := dtmgrpc.BarrierFromGrpc(l.ctx)
 	db, err := sqlx.NewMysql(l.svcCtx.Config.DB.DataSource).RawDB()
 	if err != nil {
@@ -58,10 +61,15 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 		wg.Add(2)
 		threading.GoSafe(func() {
 			defer wg.Done()
-			addressResp, err1 = l.svcCtx.AddressRPC.FindAdressById(l.ctx, &address.FindAdressByIdReq{Id: int64(in.AddressId)})
+			addressResp, err1 := l.svcCtx.AddressRPC.FindAdressById(l.ctx, &address.FindAdressByIdReq{Id: in.AddressId})
 			if err1 != nil {
 				logx.Errorf("AddressRPC.FindAdressById: %v, error: %v", in.AddressId, err1)
+				chErr <- err1
+				return
 			}
+			chErr <- nil
+			addressRespCh <- addressResp
+			close(addressRespCh)
 		})
 		//2、查询商品
 		threading.GoSafe(func() {
@@ -69,16 +77,27 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 			for _, val := range in.Details {
 				itemIds = append(itemIds, strconv.Itoa(int(val.ItemId)))
 			}
-			itemResp, err2 = l.svcCtx.ItemRPC.FindItemByIds(l.ctx, &item.FindItemByIdsReq{Ids: itemIds})
+			itemResp, err2 := l.svcCtx.ItemRPC.FindItemByIds(l.ctx, &item.FindItemByIdsReq{Ids: itemIds})
 			if err2 != nil {
 				logx.Errorf("ItemRPC.FindItemByIds: %v, error: %v", itemIds, err2)
+				chErr <- err2
+				return
 			}
+			chErr <- nil
+			itemRespCh <- itemResp
+			close(itemRespCh)
 		})
 
 		wg.Wait()
-		if err1 != nil || err2 != nil {
-			return status.Error(codes.Aborted, dtmcli.ResultFailure)
+		close(chErr)
+		for e := range chErr {
+			if e != nil {
+				return status.Error(codes.Aborted, dtmcli.ResultFailure)
+			}
 		}
+
+		addressResp = <-addressRespCh
+		itemResp = <-itemRespCh
 
 		//3、写入订单表 并 获得Id
 		//计算总金额
@@ -97,6 +116,8 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 			return status.Error(codes.Aborted, dtmcli.ResultFailure)
 		}
 
+		chErr2 := make(chan error, 3) //接受错误
+
 		wg.Add(3)
 		threading.GoSafe(func() {
 			//写缓存
@@ -109,23 +130,31 @@ func (l *CreateOrderLogic) CreateOrder(in *pb.CreateOrderReq) (*pb.CreateOrderRe
 				_ = l.svcCtx.BizRedis.Set(key, string(marshal))
 				_ = l.svcCtx.BizRedis.Expire(key, utils.CacheOrderTime)
 			}
+			chErr2 <- nil
 		})
 
 		//4、写入订单发货表
 		threading.GoSafe(func() {
 			defer wg.Done()
-			err1 = l.WriteOrderLogistics(addressResp, order.Id)
+			err1 := l.WriteOrderLogistics(addressResp, order.Id)
+			chErr2 <- err1
 		})
 
 		//5、写入订单详情表
 		threading.GoSafe(func() {
 			defer wg.Done()
-			err2 = l.WriteOrderDetail(itemResp.Data, num, order.Id)
+			err2 := l.WriteOrderDetail(itemResp.Data, num, order.Id)
+			chErr2 <- err2
 		})
 		wg.Wait()
-		if err1 != nil || err2 != nil {
-			return dtmcli.ErrFailure
+
+		close(chErr2)
+		for e := range chErr2 {
+			if e != nil {
+				return status.Error(codes.Aborted, dtmcli.ResultFailure)
+			}
 		}
+
 		return nil
 	}); err != nil {
 		return nil, status.Error(codes.Aborted, dtmcli.ResultFailure)
