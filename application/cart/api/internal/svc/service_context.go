@@ -6,7 +6,6 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 	"hmall/application/cart/api/internal/config"
 	"hmall/application/cart/api/internal/model"
-	"hmall/application/cart/rpc/carts"
 	"hmall/application/item/rpc/item"
 	"hmall/pkg/interceptors"
 	"hmall/pkg/orm"
@@ -15,7 +14,6 @@ import (
 type ServiceContext struct {
 	Config         config.Config
 	ItemRPC        item.Item
-	CartsPRC       carts.Carts
 	BizRedis       *redis.Redis
 	Db             *orm.DB
 	CartModel      *model.CartModel
@@ -24,7 +22,6 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	itemRPC := zrpc.MustNewClient(c.ItemRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
-	cartsRPC := zrpc.MustNewClient(c.CartsRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
 	rds, err := redis.NewRedis(redis.RedisConf{
 		Host: c.BizRedis.Host,
 		Pass: c.BizRedis.Pass,
@@ -43,7 +40,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:         c,
 		ItemRPC:        item.NewItem(itemRPC),
-		CartsPRC:       carts.NewCarts(cartsRPC),
 		BizRedis:       rds,
 		Db:             db,
 		CartModel:      model.NewCartModel(db.DB),

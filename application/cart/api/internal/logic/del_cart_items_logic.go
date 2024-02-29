@@ -3,13 +3,12 @@ package logic
 import (
 	"context"
 	"hmall/application/cart/api/internal/model"
+	"hmall/application/cart/api/internal/svc"
+	"hmall/application/cart/api/internal/types"
 	"hmall/application/cart/api/internal/utils"
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
 	"strconv"
-
-	"hmall/application/cart/api/internal/svc"
-	"hmall/application/cart/api/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -34,27 +33,31 @@ func (l *DelCartItemsLogic) DelCartItems(req *types.DelCartItemsReq) error {
 		logx.Errorf("CartModel.DelCartById: %V, error: %v", req.Ids, err)
 		return err
 	}
-	//2、调用mq服务删除缓存
-	usr, err := util.GetUsr(l.ctx, types.JwtKey)
+
+	//2、删除缓存
+	uid, err := util.GetUsr(l.ctx, types.JwtKey)
 	if err != nil {
 		logx.Errorf("util.GetUsr, error: %v", err)
-		return err
+		panic(err)
 	}
 	pusher := utils.NewPusherLogic(l.ctx, l.svcCtx)
 	for _, id := range req.Ids {
-		intId, err := strconv.Atoi(id)
-		if err != nil {
-			logx.Errorf("strconv.Atoi: %v, error : %v", id, err)
-			return err
-		}
-		msg := &utils.KqMsg{
-			Category: types.MSgDelCache,
-			Data:     &model.CartPO{Id: intId, UserId: usr},
-		}
-
-		if err = pusher.UpdateCache(msg); err != nil {
-			logx.Errorf("pusher.UpdateCache: %v, error: %v", *msg, err)
-			return err
+		key := util.CacheKey(types.CacheCartKey, strconv.Itoa(uid))
+		if _, err := l.svcCtx.BizRedis.Hdel(key, id); err != nil {
+			//调用mq服务删除缓存
+			intId, err1 := strconv.Atoi(id)
+			if err1 != nil {
+				logx.Errorf("strconv.Atoi: %v, error : %v", id, err1)
+				return err1
+			}
+			msg := &utils.KqMsg{
+				Category: types.MSgDelCache,
+				Data:     &model.CartPO{Id: intId, UserId: uid},
+			}
+			if err2 := pusher.UpdateCache(msg); err2 != nil {
+				logx.Errorf("pusher.UpdateCache: %v, error: %v", *msg, err2)
+				return err2
+			}
 		}
 	}
 	return xcode.New(types.OK, "")

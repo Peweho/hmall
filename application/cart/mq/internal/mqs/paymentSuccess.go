@@ -28,6 +28,7 @@ func NewPaymentSuccess(ctx context.Context, svcCtx *svc.ServiceContext) *Payment
 type KqMsg struct {
 	Category string // 1,删缓存；0，加缓存
 	Data     *model.CartPO
+	Else     string
 }
 
 type CartItem struct {
@@ -96,6 +97,12 @@ func (l *PaymentSuccess) Consume(_, str string) error {
 	case types.MSgDelCache:
 		if err = l.DelCache(key, strconv.Itoa(msg.Data.Id)); err != nil {
 			logx.Errorf("DelCache: %v, error: %v", *msg, err)
+			return err
+		}
+	case types.MSgAddCompleteCache:
+		//使用else信息作为值
+		if err := l.svcCtx.BizRedis.Hset(key, strconv.Itoa(msg.Data.Id), msg.Else); err != nil {
+			logx.Errorf("BizRedis.Hset: %v, error: %v", *msg, err)
 			return err
 		}
 	}

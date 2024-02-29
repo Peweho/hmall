@@ -24,7 +24,9 @@ func (m *CartModel) AddCatr(ctx context.Context, po *CartPO) error {
 // 查询购物车
 func (m *CartModel) QueryCatr(ctx context.Context, usr int) ([]CartPO, error) {
 	var res []CartPO
-	err := m.db.WithContext(ctx).Where("user_id = ? and is_del = ?", usr, types.NotDeleted).Find(&res).Error
+	err := m.db.WithContext(ctx).Select("id", "item_id", "num", "price", "create_time").
+		Where("user_id = ? and is_del = ?", usr, types.NotDeleted).
+		Find(&res).Error
 	return res, err
 }
 

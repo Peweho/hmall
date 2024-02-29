@@ -63,8 +63,8 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	threading.GoSafe(func() {
+		defer wg.Done()
 		sort.Sort(model.CartPOArr(catr))
-		wg.Done()
 	})
 
 	//查找商品
@@ -76,6 +76,7 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 	//对商品集合排序，保证与购物车一致
 	sort.Sort(ItemUtils.ItemsArr(itemRpcresp.Data))
 	wg.Wait()
+	chItem := make(chan *types.ItemDTO, len(catr))
 	//构造返回数据
 	CartItems := make([]types.ItemDTO, 0, len(catr))
 	for i, val := range itemRpcresp.Data {
@@ -97,26 +98,40 @@ func (l *QueryCartLogic) QueryCart() (resp *types.QueryCartResp, err error) {
 			Status:     int(val.Status),
 			Stock:      int(val.Stock),
 		}
+		chItem <- &temp
 		//3、写缓存
+		wg.Add(1)
 		threading.GoSafe(func() {
 			defer wg.Done()
-			wg.Add(1)
-			marshal, err := json.Marshal(temp)
+			date := <-chItem
+			marshal, err := json.Marshal(date)
 			if err != nil {
-				logx.Errorf("json.Marshal: %v, error: %v", temp, err)
+				logx.Errorf("json.Marshal: %v, error: %v", date, err)
 				return
 			}
-			err = l.svcCtx.BizRedis.Hset(key, strconv.Itoa(temp.Id), string(marshal))
-			if err != nil {
+
+			if err = l.svcCtx.BizRedis.Hset(key, strconv.Itoa(date.Id), string(marshal)); err != nil {
 				logx.Errorf("BizRedis.Hset: %v, error: %v", string(marshal), err)
-				return
+				//调用mq服务删除缓存
+				msg := &utils.KqMsg{
+					Category: types.MSgAddCompleteCache,
+					Data:     &model.CartPO{Id: date.Id, UserId: usr},
+					Else:     string(marshal),
+				}
+				pusher := utils.NewPusherLogic(l.ctx, l.svcCtx)
+				if err1 := pusher.UpdateCache(msg); err1 != nil {
+					logx.Errorf("pusher.UpdateCache: %v, error: %v", *msg, err1)
+					return
+				}
 			}
 		})
 		CartItems = append(CartItems, temp)
 	}
-
+	close(chItem)
 	//4、返回响应
 	wg.Wait()
+	_ = l.svcCtx.BizRedis.Expire(key, types.CacheCartTime)
+
 	return &types.QueryCartResp{Items: CartItems}, nil
 }
 
@@ -138,10 +153,8 @@ func (l *QueryCartLogic) QueryCache(key string) (resp *types.QueryCartResp, err 
 		CartItems = append(CartItems, CartItem)
 	}
 
-	if err = l.svcCtx.BizRedis.Expire(key, types.CacheCartTime); err != nil {
-		logx.Errorf("BizRedis.Expire:%v, error: %v", key, err)
-		return nil, err
-	}
+	_ = l.svcCtx.BizRedis.Expire(key, types.CacheCartTime)
+
 	return &types.QueryCartResp{
 		Items: CartItems,
 	}, nil

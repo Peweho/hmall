@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/dtm-labs/client/dtmcli"
 	"github.com/dtm-labs/client/dtmgrpc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/zeromicro/go-zero/core/threading"
@@ -37,25 +36,36 @@ func (l *DelCartsLogic) DelCarts(in *pb.DelCartsReq) (*pb.DelCartsResp, error) {
 	db, err := sqlx.NewMysql(l.svcCtx.Config.DB.DataSource).RawDB()
 
 	if err = barrier.CallWithDB(db, func(tx *sql.Tx) error {
+		chErr := make(chan error, 2)
 		wg := &sync.WaitGroup{}
 		wg.Add(2)
 		threading.GoSafe(func() {
 			defer wg.Done()
 			if err = l.svcCtx.CartModel.DelCartsByUidItemId(l.ctx, in.Usr, in.ItemId); err != nil {
 				logx.Errorf("CartModel.DelCartsByIds: %v, error: %v", in.Usr, err)
+				chErr <- status.Error(codes.Internal, err.Error())
 			}
 		})
 		//删缓存
 		threading.GoSafe(func() {
 			defer wg.Done()
 			key := fmt.Sprintf("%s#%d", utils.CacheCartKey, in.Usr)
-			_, _ = l.svcCtx.BizRedis.HdelCtx(l.ctx, key, in.ItemId...)
+			if _, err = l.svcCtx.BizRedis.Hdel(key); err != nil {
+				logx.Errorf("BizRedis.Hdel: %v, error: %v", key, err)
+				chErr <- status.Error(codes.Internal, err.Error())
+			}
 		})
 		wg.Wait()
+		close(chErr)
 
+		for e := range chErr {
+			if e == status.Error(codes.Internal, err.Error()) {
+				return e
+			}
+		}
 		return nil
 	}); err != nil {
-		return nil, status.Error(codes.Aborted, dtmcli.ResultFailure)
+		return nil, err
 	}
 
 	return &pb.DelCartsResp{}, nil

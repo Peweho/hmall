@@ -31,3 +31,9 @@ DB:
   MaxIdleConns: 10
   MaxOpenConns: 100
   ConnMaxLifetime: 3600
+
+Telemetry:
+  Name: cart-api
+  Endpoint: http://192.168.92.201:14268/api/traces
+  Sampler: 1.0
+  Batcher: jaeger

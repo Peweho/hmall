@@ -12,6 +12,7 @@ KqConsumerConf:
   Offset: last
   Consumers: 1
   Processors: 1
+  MaxAttempts: 3
 
 BizRedis:
   Host: 192.168.92.201:6379
@@ -30,3 +31,9 @@ ItemRPC:
       - 192.168.92.201:2379
     Key: item.rpc
   NonBlock: true
+
+Telemetry:
+  Name: cart-mq
+  Endpoint: http://192.168.92.201:14268/api/traces
+  Sampler: 1.0
+  Batcher: jaeger

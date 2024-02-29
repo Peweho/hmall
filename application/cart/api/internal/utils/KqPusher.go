@@ -25,6 +25,7 @@ func NewPusherLogic(ctx context.Context, svcCtx *svc.ServiceContext) *PusherLogi
 type KqMsg struct {
 	Category string // 1,删缓存；0，加缓存
 	Data     *model.CartPO
+	Else     string
 }
 
 func (l *PusherLogic) UpdateCache(msg *KqMsg) error {

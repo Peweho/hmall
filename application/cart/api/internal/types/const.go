@@ -21,8 +21,9 @@ const (
 	MoneyNotenough = 406
 )
 const (
-	MSgAddCache = "0"
-	MSgDelCache = "1"
+	MSgAddCache         = "0"
+	MSgDelCache         = "1"
+	MSgAddCompleteCache = "2" //不需要查询商品
 )
 
 // 购物车删除状态
