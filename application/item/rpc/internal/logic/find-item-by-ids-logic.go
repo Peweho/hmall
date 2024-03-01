@@ -13,6 +13,7 @@ import (
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
 	"strconv"
+	"sync"
 )
 
 type FindItemByIdsLogic struct {
@@ -34,11 +35,11 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 	if len(in.Ids) == 0 {
 		return nil, xcode.New(200, "ids为空")
 	}
-
 	items := make([]*pb.Items, 0, len(in.Ids))
 
 	//2、查询缓存 并且 构造新的请求ids
-	newIds, err := l.ReadCache(&items, in.Ids)
+	wg := &sync.WaitGroup{}
+	newIds, err := l.ReadCache(&items, in.Ids, wg)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +58,10 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 	//3、写缓存
 	threading.NewWorkerGroup(func() {
 		_ = l.WriteCache(res)
-	}, 1)
+	}, 1).Start()
 
+	//等待读缓存结束
+	wg.Wait()
 	//4、类型转换
 	for _, v := range res {
 		items = append(items, ItemDTO_To_Item(v))
@@ -80,7 +83,6 @@ func ItemDTO_To_Item(item model.ItemDTO) *pb.Items {
 		Price:        item.Price,
 		Sold:         item.Sold,
 		Spec:         item.Spec,
-		Status:       item.Status,
 		Stock:        item.Stock,
 	}
 }
@@ -91,46 +93,46 @@ func CacheIds(id string) string {
 }
 
 // 读缓存
-func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string) ([]string, error) {
+func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string, wg *sync.WaitGroup) ([]string, error) {
 
 	newIds := make([]string, 0, len(ids))
 	for _, v := range ids {
-		key := CacheIds(v)
+		key := util.CacheKey(types.CacheItemKey, v)
 		ok, _ := l.svcCtx.BizRedis.Exists(key)
 		if !ok {
 			//缓存不存在，将对应id存储到newIds中
 			newIds = append(newIds, v)
 			continue
 		}
+		wg.Add(1)
+		threading.GoSafe(func() {
+			defer wg.Done()
+			//判对应商品是存在，存在加入items
+			_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
+			cacheItem, _ := l.svcCtx.BizRedis.Hgetall(key)
+			var temp pb.Items
+			err := json.Unmarshal([]byte(cacheItem[types.CacheItemFields]), &temp)
+			if err != nil {
+				logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
+				panic(err)
+			}
+			//设置库存
+			stock, err := strconv.ParseInt(cacheItem[types.CacheItemStock], 10, 64)
+			if err != nil {
+				logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStock], err)
+				panic(err)
+			}
+			temp.Stock = int64(stock)
 
-		//判对应商品是存在，存在加入items
-		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
-		cacheItem, _ := l.svcCtx.BizRedis.Get(key)
-		var temp pb.Items
-		err := json.Unmarshal([]byte(cacheItem), &temp)
-		if err != nil {
-			logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
-			return nil, err
-		}
-
-		//查询库存缓存 （商品缓存存在，库存缓存一定在）
-		key2 := util.CacheKey(types.CacheItemStockKey, v)
-		get, err := l.svcCtx.BizRedis.Get(key2)
-		if err != nil {
-			logx.Errorf("BizRedis.Get: %v , error: ,%v", key2, err)
-			ids = append(ids, v)
-			continue
-		}
-		_ = l.svcCtx.BizRedis.Expire(key2, types.CacheItemTime)
-		stock, err := strconv.ParseInt(get, 10, 64)
-		if err != nil {
-			logx.Errorf("strconv.ParseInt: %v , error: ,%v", get, err)
-			ids = append(ids, v)
-			continue
-		}
-
-		temp.Stock = stock
-		*items = append(*items, &temp)
+			//设置状态
+			status, err := strconv.ParseInt(cacheItem[types.CacheItemStatus], 10, 64)
+			if err != nil {
+				logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStatus], err)
+				panic(err)
+			}
+			temp.Status = status
+			*items = append(*items, &temp)
+		})
 	}
 	return newIds, nil
 }
@@ -143,21 +145,19 @@ func (l *FindItemByIdsLogic) WriteCache(items []model.ItemDTO) error {
 			logx.Errorf("json.Marshal: %v , error: ,%v", v, err)
 			return err
 		}
-		key := CacheIds(strconv.Itoa(int(v.Id)))
-		err = l.svcCtx.BizRedis.Set(key, string(marshal))
-		if err != nil {
-			logx.Errorf("BizRedis.Set: %v , error: ,%v", key, err)
-			return err
-		}
-		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
 
-		key2 := util.CacheKey(types.CacheItemStockKey, strconv.Itoa(int(v.Id)))
-		err = l.svcCtx.BizRedis.Set(key2, strconv.Itoa(int(v.Stock)))
-		if err != nil {
-			logx.Errorf("BizRedis.Set: %v , error: ,%v", key2, err)
-			return err
+		key := util.CacheKey(types.CacheItemKey, strconv.FormatInt(v.Id, 10))
+		if err := l.svcCtx.BizRedis.Hmset(key, map[string]string{
+			types.CacheItemFields: string(marshal),
+			types.CacheItemStatus: strconv.FormatInt(v.Status, 10),
+			types.CacheItemStock:  strconv.FormatInt(v.Stock, 10),
+		}); err != nil {
+			logx.Errorf("BizRedis.Hmset: %v, error: %v", key, err)
 		}
-		_ = l.svcCtx.BizRedis.Expire(key2, types.CacheItemTime)
+
+		//设置有效期
+		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime)
 	}
+
 	return nil
 }

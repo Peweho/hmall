@@ -34,13 +34,15 @@ func (m *ItemModel) DecutStock(ctx context.Context, id int, num int) (*ItemDTO, 
 func (m *ItemModel) DelItemById(ctx context.Context, id int) error {
 	return m.db.WithContext(ctx).
 		Where("id = ?", id).
-		Delete(&ItemDTO{}).Error
+		Update("status", types.ItemStatusDeleted).Error
 }
 
 // 分页查询
 func (m *ItemModel) QueryItemPage(ctx context.Context, page, pageSize int, sortBy, isAsc string) ([]ItemDTO, error) {
 	var res []ItemDTO
 	err := m.db.WithContext(ctx).
+		Omit(types.SelOmit).
+		Where("status = ?", types.ItemStatusNormal).
 		Limit(pageSize).
 		Offset((page - 1) * pageSize).
 		Order(sortBy + " " + isAsc).

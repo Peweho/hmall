@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"gorm.io/gorm"
+	"hmall/application/item/rpc/types"
 )
 
 type ItemModel struct {
@@ -18,7 +19,8 @@ func NewItemModel(db *gorm.DB) *ItemModel {
 func (m *ItemModel) FindItemByIds(ctx context.Context, ids []string) ([]ItemDTO, error) {
 	var items []ItemDTO
 	err := m.db.WithContext(ctx).
-		Where("id in ?", ids).
+		Omit(types.SelOmit).
+		Where("id in ? and status = ?", ids, types.ItemStatusNormal).
 		Find(&items).Error
 	return items, err
 }

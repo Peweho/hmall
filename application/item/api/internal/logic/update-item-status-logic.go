@@ -2,13 +2,12 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
-	"hmall/application/item/api/internal/util"
-	pkgUtil "hmall/pkg/util"
+	utils "hmall/application/item/api/internal/util"
+	"hmall/pkg/util"
 	"strconv"
 	"sync"
 )
@@ -36,31 +35,51 @@ func (l *UpdateItemStatusLogic) UpdateItemStatus(req *types.UpdateItemStatusReq)
 		return err
 	}
 	//3、同步缓存 es
-	pusherSearch := util.NewPusherSearchLogic(l.ctx, l.svcCtx)
+	pusherSearch := utils.NewPusherSearchLogic(l.ctx, l.svcCtx)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 	//写缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
-		marshal, err := json.Marshal(newItem)
-		if err != nil {
-			logx.Errorf("json.Marshal: %v, error: %v", *newItem, err)
-			panic(err)
-		}
 
-		key := pkgUtil.CacheKey(types.CacheItemStockKey, strconv.Itoa(int(newItem.Id)))
-		err = l.svcCtx.BizRedis.Set(key, string(marshal))
+		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
+		err = l.svcCtx.BizRedis.Hset(key, types.CacheItemStatus, strconv.Itoa(req.Status))
 		if err != nil {
 			logx.Errorf("BizRedis.Set: %v, error: %v", key, err)
-			panic(err)
+
+			//缓存失败，进行补偿
+			cacheLogic := utils.NewPusherLogic(l.ctx, l.svcCtx)
+			//构造对象
+			msg := &utils.KqCacheMsg{
+				Code:  types.KqCacheStatus,
+				Stock: strconv.Itoa(req.Status),
+				Key:   key,
+			}
+
+			if errKq := cacheLogic.Pusher(msg); errKq != nil {
+				logx.Errorf("acheLogic.Pusher: %v, error: %v", msg, err)
+				panic(errKq)
+			}
 		}
+		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime)
 	})
 
 	//同步es
 	threading.GoSafe(func() {
 		defer wg.Done()
-		err = pusherSearch.PusherSearch(types.KqUpdate, newItem)
+		var err error
+		switch req.Status {
+		case types.ItemStatusNormal:
+			err = pusherSearch.PusherSearch(types.KqUpdate, newItem)
+		case types.ItemStatusRemove:
+			err = pusherSearch.PusherSearch(types.KqDel, newItem)
+		case types.ItemStatusDeleted:
+			err = pusherSearch.PusherSearch(types.KqDel, newItem)
+		default:
+			logx.Errorf("switch req.Status: %v, error: %v", req.Status, "商品状态不正确")
+			panic("商品状态不正确")
+		}
 		if err != nil {
 			logx.Errorf("pusherSearch.PusherSearch: %v, error: %v", *newItem, err)
 			panic(err)

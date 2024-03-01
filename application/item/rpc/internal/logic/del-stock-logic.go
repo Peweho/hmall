@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"github.com/dtm-labs/client/dtmcli"
@@ -13,7 +14,9 @@ import (
 	"hmall/application/item/rpc/internal/svc"
 	"hmall/application/item/rpc/pb"
 	"hmall/application/item/rpc/types"
-	pkgUtil "hmall/pkg/util"
+	"hmall/pkg/util"
+	"io"
+	"os"
 	"strconv"
 	"sync"
 )
@@ -41,21 +44,22 @@ func (l *DelStockLogic) DelStock(in *pb.DelStockReq) (*pb.DelStockResp, error) {
 			item, err := l.svcCtx.ItemModel.DecutStock(l.ctx, val.ItemId, val.Num)
 			if err != nil {
 				logx.Errorf("ItemModel.DecutStock: %v, error: %v", val, err)
-				return err
+				return status.Error(codes.Internal, err.Error())
 			}
+
+			//库存不足回滚
 			if item.Stock < 0 {
-				return dtmcli.ErrFailure
+				return status.Error(codes.Aborted, dtmcli.ResultFailure)
 			}
 
 			wg := &sync.WaitGroup{}
 			wg.Add(2)
-			//写缓存
+			//更新缓存
 			threading.GoSafe(func() {
 				defer wg.Done()
-				key := pkgUtil.CacheKey(types.CacheItemStockKey, strconv.Itoa(int(item.Id)))
-				err = l.svcCtx.BizRedis.Set(key, strconv.Itoa(int(item.Stock)))
+				err := l.UpdateCache(val.ItemId, val.Num)
 				if err != nil {
-					logx.Errorf("BizRedis.Set: %v, error: %v", key, err)
+					panic(err)
 				}
 			})
 
@@ -66,14 +70,61 @@ func (l *DelStockLogic) DelStock(in *pb.DelStockReq) (*pb.DelStockResp, error) {
 				err = pusherSearch.PusherSearch(types.KqUpdate, item)
 				if err != nil {
 					logx.Errorf("pusherSearch.PusherSearch: %v, error: %v", *item, err)
+					panic(err)
 				}
 			})
 			wg.Wait()
 		}
 		return nil
 	}); err != nil {
-		return nil, status.Error(codes.Aborted, dtmcli.ResultFailure)
+		return nil, err
 	}
 
 	return &pb.DelStockResp{}, nil
+}
+
+func (l *DelStockLogic) UpdateCache(itemId string, stock int64) error {
+	lockKey := util.CacheKey(types.CacheStockLock, itemId)
+	key := util.CacheKey(types.CacheItemKey, itemId)
+	exists, _ := l.svcCtx.BizRedis.Exists(key)
+	//缓存存在，更新缓存
+	if exists {
+		//读取lua脚本
+		luaScript, err := ReadLua()
+		if err != nil {
+			return err
+		}
+		// 执行Lua脚本
+		_, err = l.svcCtx.BizRedis.Eval(luaScript, []string{
+			lockKey,
+			key,
+			types.CacheItemStock,
+		}, itemId, strconv.FormatInt(stock, 10), types.CacheItemTime)
+		if err != nil && err.Error() != "redis: nil" {
+			logx.Errorf("BizRedis.Eval, error: %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func ReadLua() (string, error) {
+	//打开脚本
+	file, err := os.Open(types.Luapath)
+	if err != nil {
+		logx.Errorf("os.Open: %v,error: %v", types.Luapath, err)
+		return "", err
+	}
+	reader := bufio.NewReader(file)
+	var luaScript string
+	//逐行读取
+	for {
+		line, err := reader.ReadString('\n')
+		luaScript += line
+		if err == io.EOF {
+			break
+		}
+	}
+
+	return luaScript, nil
 }

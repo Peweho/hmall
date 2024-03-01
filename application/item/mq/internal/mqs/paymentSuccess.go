@@ -2,12 +2,10 @@ package mqs
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/item/mq/internal/svc"
-	"hmall/application/item/rpc/item"
 	"hmall/application/item/rpc/types"
-	"log"
 )
 
 type PaymentSuccess struct {
@@ -22,22 +20,113 @@ func NewPaymentSuccess(ctx context.Context, svcCtx *svc.ServiceContext) *Payment
 	}
 }
 
-// 更新缓存
-func (l *PaymentSuccess) Consume(_, id string) error {
+// Kq补偿类型
+const (
+	KqCacheAll = iota
+	KqCachePart
+	KqCacheStock
+	KqCacheStatus
+	KqCacheDel
+)
 
-	key := CacheIds(id)
-	//1、删除缓存
-	_, err := l.svcCtx.BizRedis.Del(key)
-	log.Println("删除缓存: %v", key)
-	//2、添加缓存
-	_, err = l.svcCtx.ItemRPC.FindItemByIds(l.ctx, &item.FindItemByIdsReq{Ids: []string{id}})
-	if err != nil {
-		logx.Errorf("ItemRPC.FindItemByIds: %v, error: %v", id, err)
+type KqCacheMsg struct {
+	Code   int //补偿类型：0、全字段添加；1、更新部分字段；2，更新库存；3、更新状态;4、删除
+	Field  string
+	Stock  string
+	Status string
+	Key    string
+}
+
+// 更新缓存
+func (l *PaymentSuccess) Consume(_, data string) error {
+	msg := &KqCacheMsg{}
+	if err := json.Unmarshal([]byte(data), msg); err != nil {
+		logx.Errorf(": %v, error； %v", data, err)
 		return err
 	}
+
+	switch msg.Code {
+	case KqCacheAll:
+		if err := l.CacheAll(msg); err != nil {
+			logx.Errorf("l.CacheAll: %v, error: %v", *msg, err)
+			return err
+		}
+	case KqCachePart:
+		if err := l.CacheField(msg); err != nil {
+			logx.Errorf("l.CacheField: %v, error: %v", *msg, err)
+			return err
+		}
+	case KqCacheStock:
+		if err := l.CacheStock(msg); err != nil {
+			logx.Errorf("l.CacheStoc: %v, error: %v", *msg, err)
+			return err
+		}
+	case KqCacheStatus:
+		if err := l.CacheStatus(msg); err != nil {
+			logx.Errorf("l.CacheStatus: %v, error: %v", *msg, err)
+			return err
+		}
+	case KqCacheDel:
+		if err := l.CacheDel(msg); err != nil {
+			logx.Errorf("l.CacheDel: %v, error: %v", *msg, err)
+			return err
+		}
+	default:
+		panic("传输code不正确")
+	}
+
 	return nil
 }
 
-func CacheIds(id string) string {
-	return fmt.Sprintf("%s#%s", types.CacheItemKey, id)
+// 全字段添加
+func (l *PaymentSuccess) CacheAll(msg *KqCacheMsg) error {
+	if err := l.svcCtx.BizRedis.Hmset(msg.Key, map[string]string{
+		types.CacheItemFields: msg.Field,
+		types.CacheItemStatus: msg.Status,
+		types.CacheItemStock:  msg.Stock,
+	}); err != nil {
+		logx.Errorf("BizRedis.Hmset: %v, error: %v", msg.Key, err)
+		return err
+	}
+	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
+	return nil
+}
+
+// 更新部分字段
+func (l *PaymentSuccess) CacheField(msg *KqCacheMsg) error {
+	if err := l.svcCtx.BizRedis.Hset(msg.Key, types.CacheItemFields, msg.Field); err != nil {
+		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
+		return err
+	}
+	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
+	return nil
+}
+
+// 更新库存
+func (l *PaymentSuccess) CacheStock(msg *KqCacheMsg) error {
+	if err := l.svcCtx.BizRedis.Hset(msg.Key, types.CacheItemStock, msg.Stock); err != nil {
+		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
+		return err
+	}
+	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
+	return nil
+}
+
+// 更新状态
+func (l *PaymentSuccess) CacheStatus(msg *KqCacheMsg) error {
+	if err := l.svcCtx.BizRedis.Hset(msg.Key, types.CacheItemStatus, msg.Status); err != nil {
+		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
+		return err
+	}
+	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
+	return nil
+}
+
+// 删除
+func (l *PaymentSuccess) CacheDel(msg *KqCacheMsg) error {
+	if _, err := l.svcCtx.BizRedis.Del(msg.Key); err != nil {
+		logx.Errorf("BizRedis.Del: %v, error: %v", msg.Key, err)
+		return err
+	}
+	return nil
 }

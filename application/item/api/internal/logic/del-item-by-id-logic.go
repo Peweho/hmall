@@ -4,12 +4,12 @@ import (
 	"context"
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/model"
-	"hmall/application/item/api/internal/util"
-	"strconv"
-	"sync"
-
 	"hmall/application/item/api/internal/svc"
 	"hmall/application/item/api/internal/types"
+	utils "hmall/application/item/api/internal/util"
+	"hmall/pkg/util"
+	"strconv"
+	"sync"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -36,14 +36,14 @@ func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
 	}
 
 	//3、同步缓存 es
-	pusherSearch := util.NewPusherSearchLogic(l.ctx, l.svcCtx)
+	pusherSearch := utils.NewPusherSearchLogic(l.ctx, l.svcCtx)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
 	//删除缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
-		key := util.CacheIds(strconv.Itoa(req.Id))
+		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
 		_, err = l.svcCtx.BizRedis.Del(key)
 		if err != nil {
 			logx.Errorf("BizRedis.Del: %v,error: %v", key, err)
