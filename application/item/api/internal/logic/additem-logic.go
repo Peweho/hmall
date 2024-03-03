@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/model"
@@ -18,6 +19,7 @@ type AdditemLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	Bloom  *bloom.Filter
 }
 
 func NewAdditemLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AdditemLogic {
@@ -25,6 +27,7 @@ func NewAdditemLogic(ctx context.Context, svcCtx *svc.ServiceContext) *AdditemLo
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Bloom:  bloom.New(svcCtx.BizRedis, types.ItemBloomKey, 20*svcCtx.Config.ItemNums),
 	}
 }
 
@@ -51,7 +54,14 @@ func (l *AdditemLogic) Additem(req *types.ItemReqAndResp) error {
 	}
 
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
+
+	//添加到布隆过滤器
+	threading.GoSafe(func() {
+		defer wg.Done()
+		err := l.Bloom.AddCtx(l.ctx, []byte(strconv.FormatInt(item.Id, 10)))
+		panic(err)
+	})
 
 	//同步es
 	threading.GoSafe(func() {

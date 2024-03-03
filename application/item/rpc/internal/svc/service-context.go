@@ -23,14 +23,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MaxIdleConns: c.DB.MaxIdleConns,
 		MaxLifetime:  c.DB.MaxLifetime,
 	})
-	rds, err := redis.NewRedis(redis.RedisConf{
+	rds := redis.MustNewRedis(redis.RedisConf{
 		Host: c.BizRedis.Host,
 		Pass: c.BizRedis.Pass,
 		Type: c.BizRedis.Type,
 	})
-	if err != nil {
-		panic(err)
-	}
 
 	return &ServiceContext{
 		Config:         c,

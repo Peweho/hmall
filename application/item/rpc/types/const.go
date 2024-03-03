@@ -10,6 +10,7 @@ const (
 	CacheStockLock  = "stockLock"
 	Luapath         = "./etc/decut_stock.lua"
 	LuapathRollBack = "./etc/decut_stock_roll_back.lua"
+	ItemBloomKey    = "itemBloom"
 )
 
 const (

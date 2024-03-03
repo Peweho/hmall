@@ -9,6 +9,7 @@ const (
 	CacheItemStatus = "status"
 	CacheStockLock  = "stockLock"
 	Luapath         = "./etc/decut_stock.lua"
+	ItemBloomKey    = "itemBloom"
 )
 
 // 分页查询默认值

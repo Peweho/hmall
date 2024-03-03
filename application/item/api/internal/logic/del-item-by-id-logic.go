@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/api/internal/model"
 	"hmall/application/item/api/internal/svc"
@@ -18,6 +19,7 @@ type DelItemByIdLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
+	Bloom  *bloom.Filter
 }
 
 func NewDelItemByIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelItemByIdLogic {
@@ -25,6 +27,7 @@ func NewDelItemByIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DelIt
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
+		Bloom:  bloom.New(svcCtx.BizRedis, types.ItemBloomKey, 20*svcCtx.Config.ItemNums),
 	}
 }
 
@@ -39,7 +42,7 @@ func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
 	pusherSearch := utils.NewPusherSearchLogic(l.ctx, l.svcCtx)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 	//删除缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
@@ -59,6 +62,13 @@ func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
 			logx.Errorf("pusherSearch.PusherSearch: %v, error: %v", req.Id, err)
 			panic(err)
 		}
+	})
+
+	//添加到布隆过滤器
+	threading.GoSafe(func() {
+		defer wg.Done()
+		err := l.Bloom.AddCtx(l.ctx, []byte(strconv.Itoa(req.Id)))
+		panic(err)
 	})
 	wg.Wait()
 	return nil

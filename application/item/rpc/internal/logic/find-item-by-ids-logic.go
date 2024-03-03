@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/rpc/internal/model"
@@ -20,6 +21,7 @@ type FindItemByIdsLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
+	Bloom *bloom.Filter
 }
 
 func NewFindItemByIdsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FindItemByIdsLogic {
@@ -27,6 +29,7 @@ func NewFindItemByIdsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Fin
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
+		Bloom:  bloom.New(svcCtx.BizRedis, types.ItemBloomKey, 20*svcCtx.Config.ItemNums),
 	}
 }
 
@@ -44,6 +47,7 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 		return nil, err
 	}
 
+	wg.Wait()
 	if len(newIds) == 0 {
 		return &pb.FindItemByIdsResp{Data: items}, nil
 	}
@@ -60,8 +64,6 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 		_ = l.WriteCache(res)
 	}, 1).Start()
 
-	//等待读缓存结束
-	wg.Wait()
 	//4、类型转换
 	for _, v := range res {
 		items = append(items, ItemDTO_To_Item(v))
@@ -94,10 +96,16 @@ func CacheIds(id string) string {
 
 // 读缓存
 func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string, wg *sync.WaitGroup) ([]string, error) {
-
 	newIds := make([]string, 0, len(ids))
 	for _, v := range ids {
 		key := util.CacheKey(types.CacheItemKey, v)
+
+		//使用布隆过滤器判断id是否存在于数据库
+		bloomOk, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
+		if !bloomOk {
+			continue
+		}
+
 		ok, _ := l.svcCtx.BizRedis.Exists(key)
 		if !ok {
 			//缓存不存在，将对应id存储到newIds中

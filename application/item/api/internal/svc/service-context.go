@@ -23,7 +23,7 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	itemRPC := zrpc.MustNewClient(c.ItemRPC, zrpc.WithUnaryClientInterceptor(interceptors.ClientErrorInterceptor()))
-	rds, err := redis.NewRedis(redis.RedisConf{
+	rds := redis.MustNewRedis(redis.RedisConf{
 		Host: c.BizRedis.Host,
 		Pass: c.BizRedis.Pass,
 		Type: c.BizRedis.Type,
@@ -34,9 +34,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		MaxIdleConns: c.DB.MaxIdleConns,
 		MaxLifetime:  c.DB.MaxLifetime,
 	})
-	if err != nil {
-		panic(err)
-	}
 	return &ServiceContext{
 		Config:                    c,
 		ItemRPC:                   item.NewItem(itemRPC),

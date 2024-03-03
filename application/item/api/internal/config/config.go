@@ -28,4 +28,6 @@ type Config struct {
 		Brokers []string
 		Topic   string
 	}
+
+	ItemNums uint
 }
