@@ -60,7 +60,9 @@ func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 			logx.Errorf("ItemModel.DecutStock: id=%v,num=%v, error: %v", order.ItemId, order.Num, err)
 			cancel(err)
 		}
-		writer.Write(map[int]*model.ItemDTO{order.Num: newItem})
+		if newItem.Id != 0 {
+			writer.Write(map[int]*model.ItemDTO{order.Num: newItem})
+		}
 	}, func(pipe <-chan map[int]*model.ItemDTO, writer mr.Writer[int], cancel func(error)) {
 		//3、同步缓存
 		wg := &sync.WaitGroup{}

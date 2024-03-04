@@ -25,7 +25,7 @@ func (m *ItemModel) DecutStock(ctx context.Context, id int, num int) (*ItemDTO, 
 	var item ItemDTO
 	err := m.db.WithContext(ctx).
 		Model(&ItemDTO{}).
-		Where("id = ?", id).
+		Where("id = ? and stock >= ", id, num).
 		Update("stock", gorm.Expr("stock - ?", num)).Find(&item).Error
 	return &item, err
 }
