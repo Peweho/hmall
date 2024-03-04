@@ -50,6 +50,14 @@ func (m *ItemModel) QueryItemPage(ctx context.Context, page, pageSize int, sortB
 	return res, err
 }
 
+// 查询商品总数量
+func (m *ItemModel) GetItemTotal(ctx context.Context, total *int64) error {
+	return m.db.WithContext(ctx).
+		Where("status = ?", types.ItemStatusNormal).
+		Model(&ItemDTO{}).
+		Count(total).Error
+}
+
 // 根据id更新商品
 func (m *ItemModel) UpdateItemById(ctx context.Context, item ItemDTO) error {
 	return m.db.WithContext(ctx).Updates(item).Error

@@ -2,22 +2,26 @@ package types
 
 // 缓存相关
 const (
-	CacheItemKey    = "cache#item"
-	CacheItemTime   = 3600
-	CacheItemFields = "fields"
-	CacheItemStock  = "stock"
-	CacheItemStatus = "status"
-	CacheStockLock  = "stockLock"
-	Luapath         = "./etc/decut_stock.lua"
-	ItemBloomKey    = "itemBloom"
+	CacheItemKey           = "cache#item"
+	CacheItemTime          = 3600
+	CacheItemFields        = "fields"
+	CacheItemStock         = "stock"
+	CacheItemStatus        = "status"
+	CacheStockLock         = "stockLock"
+	Luapath                = "./etc/decut_stock.lua"
+	ItemBloomKey           = "itemBloom"
+	CacheQueryItemKey      = "cache#query#item"       //分页查询缓存
+	CacheQueryItemTotalKey = "cache#query#item#total" //分页查询缓存
+	CacheQueryItemTime     = 1800                     //分页查询缓存持续时间
 )
 
 // 分页查询默认值
 const (
-	SortBy   = "id"
-	IsAsc    = "desc"
-	Page     = 1
-	PageSize = 5
+	SortBy    = "id"
+	IsAsc     = "desc"
+	Page      = 1
+	PageSize  = 5
+	DataQuery = 10 //数据库一次性查询条数
 )
 
 // 同步es和缓存 忽略查询item的字段
