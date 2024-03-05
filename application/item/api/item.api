@@ -85,6 +85,10 @@ type DelItemByIdReq {
 	Id int `path:"id"`
 }
 
+type QueryPreparedRedis {
+
+}
+
 @server (
 	jwt: Auth
 	prefix :/items

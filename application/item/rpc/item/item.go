@@ -13,17 +13,21 @@ import (
 )
 
 type (
-	DelStockReq       = pb.DelStockReq
-	DelStockResp      = pb.DelStockResp
-	FindItemByIdsReq  = pb.FindItemByIdsReq
-	FindItemByIdsResp = pb.FindItemByIdsResp
-	ItemDetail        = pb.ItemDetail
-	Items             = pb.Items
+	DelFlashItemStockReq  = pb.DelFlashItemStockReq
+	DelFlashItemStockResp = pb.DelFlashItemStockResp
+	DelStockReq           = pb.DelStockReq
+	DelStockResp          = pb.DelStockResp
+	FindItemByIdsReq      = pb.FindItemByIdsReq
+	FindItemByIdsResp     = pb.FindItemByIdsResp
+	ItemDetail            = pb.ItemDetail
+	Items                 = pb.Items
 
 	Item interface {
 		FindItemByIds(ctx context.Context, in *FindItemByIdsReq, opts ...grpc.CallOption) (*FindItemByIdsResp, error)
 		DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
 		DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
+		// 秒杀商品服务
+		DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error)
 	}
 
 	defaultItem struct {
@@ -50,4 +54,10 @@ func (m *defaultItem) DelStock(ctx context.Context, in *DelStockReq, opts ...grp
 func (m *defaultItem) DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error) {
 	client := pb.NewItemClient(m.cli.Conn())
 	return client.DelStockRollBack(ctx, in, opts...)
+}
+
+// 秒杀商品服务
+func (m *defaultItem) DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error) {
+	client := pb.NewItemClient(m.cli.Conn())
+	return client.DelFlashItemStock(ctx, in, opts...)
 }

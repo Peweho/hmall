@@ -30,3 +30,16 @@ const (
 	TradeCancellation = 5 //交易取消
 	TradeEnd          = 6 //交易结束
 )
+
+// 秒杀商品相关
+const (
+	// 秒杀商品状态
+	FalshNotStart = iota
+	FalshStart
+	FalshEndDecut
+	FalshEndNotDecut
+
+	// 秒杀商品超时时间
+	FalshTimeOut     = 1
+	CacheFlashStatus = "item#flash"
+)

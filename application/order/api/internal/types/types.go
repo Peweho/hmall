@@ -37,3 +37,9 @@ type FindOrderByIdVO struct {
 type MarkOrderReq struct {
 	OrderId string `path:"orderId"`
 }
+
+type CreateFlashOrdeReq struct {
+	ItemId   string `json:"itemId"`
+	Num      int    `json:"num"`
+	Duration int    `json:"duration"`
+}

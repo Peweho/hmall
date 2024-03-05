@@ -36,3 +36,9 @@ func (s *ItemServer) DelStockRollBack(ctx context.Context, in *pb.DelStockReq) (
 	l := logic.NewDelStockRollBackLogic(ctx, s.svcCtx)
 	return l.DelStockRollBack(in)
 }
+
+// 秒杀商品服务
+func (s *ItemServer) DelFlashItemStock(ctx context.Context, in *pb.DelFlashItemStockReq) (*pb.DelFlashItemStockResp, error) {
+	l := logic.NewDelFlashItemStockLogic(ctx, s.svcCtx)
+	return l.DelFlashItemStock(in)
+}

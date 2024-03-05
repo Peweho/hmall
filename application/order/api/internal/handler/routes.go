@@ -27,6 +27,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/",
 				Handler: CreateOrderHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/flash",
+				Handler: CreateFlashOrderHandler(serverCtx),
+			},
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
 		rest.WithPrefix("/orders"),

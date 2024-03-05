@@ -43,6 +43,12 @@ type MarkOrderReq {
 	OrderId string `path:"orderId"`
 }
 
+type CreateFlashOrdeReq {
+	ItemId   string `json:"itemId"`
+	Num      int    `json:"num"`
+	Duration int    `json:"duration"`
+}
+
 @server (
 	jwt : Auth
 	prefix : /orders
@@ -60,4 +66,8 @@ service order-api {
 	//POST 创建订单
 	@handler CreateOrder
 	post / (CreateOrdeReq)
+
+	//POST 创建秒杀订单
+	@handler CreateFlashOrder
+	post /flash (CreateFlashOrdeReq)
 }

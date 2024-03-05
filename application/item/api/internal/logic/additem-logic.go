@@ -84,7 +84,7 @@ func (l *AdditemLogic) Additem(req *types.ItemReqAndResp) error {
 		if err := l.svcCtx.BizRedis.Hmset(key, map[string]string{
 			types.CacheItemFields: string(marshal),
 			types.CacheItemStatus: strconv.FormatInt(item.Status, 10),
-			types.CacheItemStock:  strconv.FormatInt(item.Status, 10),
+			types.CacheItemStock:  strconv.FormatInt(item.Stock, 10),
 		}); err != nil {
 			logx.Errorf("BizRedis.Hmset: %v, error: %v", key, err)
 

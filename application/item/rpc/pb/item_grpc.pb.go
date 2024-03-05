@@ -25,6 +25,8 @@ type ItemClient interface {
 	FindItemByIds(ctx context.Context, in *FindItemByIdsReq, opts ...grpc.CallOption) (*FindItemByIdsResp, error)
 	DelStock(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
 	DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
+	// 秒杀商品服务
+	DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error)
 }
 
 type itemClient struct {
@@ -62,6 +64,15 @@ func (c *itemClient) DelStockRollBack(ctx context.Context, in *DelStockReq, opts
 	return out, nil
 }
 
+func (c *itemClient) DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error) {
+	out := new(DelFlashItemStockResp)
+	err := c.cc.Invoke(ctx, "/service.Item/DelFlashItemStock", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ItemServer is the server API for Item service.
 // All implementations must embed UnimplementedItemServer
 // for forward compatibility
@@ -69,6 +80,8 @@ type ItemServer interface {
 	FindItemByIds(context.Context, *FindItemByIdsReq) (*FindItemByIdsResp, error)
 	DelStock(context.Context, *DelStockReq) (*DelStockResp, error)
 	DelStockRollBack(context.Context, *DelStockReq) (*DelStockResp, error)
+	// 秒杀商品服务
+	DelFlashItemStock(context.Context, *DelFlashItemStockReq) (*DelFlashItemStockResp, error)
 	mustEmbedUnimplementedItemServer()
 }
 
@@ -84,6 +97,9 @@ func (UnimplementedItemServer) DelStock(context.Context, *DelStockReq) (*DelStoc
 }
 func (UnimplementedItemServer) DelStockRollBack(context.Context, *DelStockReq) (*DelStockResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelStockRollBack not implemented")
+}
+func (UnimplementedItemServer) DelFlashItemStock(context.Context, *DelFlashItemStockReq) (*DelFlashItemStockResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DelFlashItemStock not implemented")
 }
 func (UnimplementedItemServer) mustEmbedUnimplementedItemServer() {}
 
@@ -152,6 +168,24 @@ func _Item_DelStockRollBack_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Item_DelFlashItemStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DelFlashItemStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ItemServer).DelFlashItemStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/service.Item/DelFlashItemStock",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ItemServer).DelFlashItemStock(ctx, req.(*DelFlashItemStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Item_ServiceDesc is the grpc.ServiceDesc for Item service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +204,10 @@ var Item_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DelStockRollBack",
 			Handler:    _Item_DelStockRollBack_Handler,
+		},
+		{
+			MethodName: "DelFlashItemStock",
+			Handler:    _Item_DelFlashItemStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
