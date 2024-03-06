@@ -21,3 +21,10 @@ func (m *AddressModel) QueryAddressFindById(ctx context.Context, id int64) (Addr
 	err := m.db.WithContext(ctx).Where("id = ?", id).Find(&res).Error
 	return res, err
 }
+
+// 获得用户默认地址
+func (m *AddressModel) GetUserDefaultAddress(ctx context.Context, uid int64) (AddressPO, error) {
+	var res AddressPO
+	err := m.db.WithContext(ctx).Where("user_id = ? and is_default = ?", uid, "1").Limit(1).Find(&res).Error
+	return res, err
+}

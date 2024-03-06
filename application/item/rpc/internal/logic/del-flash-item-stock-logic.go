@@ -42,9 +42,8 @@ var luaFlashItem = `
 				redis.call("SET", KEYS[4],ARGV[3]) --设置秒杀状态已经开始
 				redis.call("EXPIRE", KEYS[3], 3)  -- 设置锁的过期时间
 				local stock = redis.call("HGET",KEYS[1],KEYS[2]) -- 获取库存
-
-				if stock < ARGV[1] then --检查库存是否足够
-					redis.call("SET", KEYS[3], ARGV[4]) --设置秒杀未扣减库存
+				if tonumber(stock) < tonumber(ARGV[1]) then --检查库存是否足够
+					redis.call("SET", KEYS[4], ARGV[4]) --设置秒杀未扣减库存
 				else
 					res = 1 
 					redis.call("HSET",KEYS[1],KEYS[2],stock - ARGV[1]) -- 扣减库存
@@ -58,9 +57,6 @@ var luaFlashItem = `
 			end
 		until acquired == 1 or retries > maxRetries
 
-		if res == 0 then 
-			redis.call("DEL", KEYS[3]) --释放锁
-		end
 		return res
 	`
 
@@ -68,6 +64,9 @@ var luaFlashItem = `
 func (l *DelFlashItemStockLogic) DelFlashItemStock(in *pb.DelFlashItemStockReq) (*pb.DelFlashItemStockResp, error) {
 
 	key := util.CacheKey(types.CacheItemKey, in.ItemId)
+	hget, _ := l.svcCtx.BizRedis.Hget(key, types.CacheItemStock)
+	log.Println("stock:", hget)
+	log.Println("num:", in.Num)
 	lock := fmt.Sprintf("%s#%s", types.CacheStockLock, in.ItemId)
 	//秒杀状态键
 	falshStateKey := fmt.Sprintf("%s#%d#%s", types.CacheFlashStatus, in.Uid, in.ItemId)

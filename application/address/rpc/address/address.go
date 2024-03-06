@@ -13,11 +13,13 @@ import (
 )
 
 type (
-	FindAdressByIdReq  = service.FindAdressByIdReq
-	FindAdressByIdResp = service.FindAdressByIdResp
+	FindAdressByIdReq        = service.FindAdressByIdReq
+	FindAdressByIdResp       = service.FindAdressByIdResp
+	GetUserDefaultAddressReq = service.GetUserDefaultAddressReq
 
 	Address interface {
 		FindAdressById(ctx context.Context, in *FindAdressByIdReq, opts ...grpc.CallOption) (*FindAdressByIdResp, error)
+		GetUserDefaultAddress(ctx context.Context, in *GetUserDefaultAddressReq, opts ...grpc.CallOption) (*FindAdressByIdResp, error)
 	}
 
 	defaultAddress struct {
@@ -34,4 +36,9 @@ func NewAddress(cli zrpc.Client) Address {
 func (m *defaultAddress) FindAdressById(ctx context.Context, in *FindAdressByIdReq, opts ...grpc.CallOption) (*FindAdressByIdResp, error) {
 	client := service.NewAddressClient(m.cli.Conn())
 	return client.FindAdressById(ctx, in, opts...)
+}
+
+func (m *defaultAddress) GetUserDefaultAddress(ctx context.Context, in *GetUserDefaultAddressReq, opts ...grpc.CallOption) (*FindAdressByIdResp, error) {
+	client := service.NewAddressClient(m.cli.Conn())
+	return client.GetUserDefaultAddress(ctx, in, opts...)
 }

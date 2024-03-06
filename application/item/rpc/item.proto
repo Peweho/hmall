@@ -7,9 +7,9 @@ service Item {
   rpc FindItemByIds(FindItemByIdsReq) returns (FindItemByIdsResp);
   rpc DelStock(DelStockReq) returns (DelStockResp);
   rpc DelStockRollBack(DelStockReq) returns (DelStockResp);
-
   //秒杀商品服务
   rpc DelFlashItemStock(DelFlashItemStockReq) returns (DelFlashItemStockResp);
+  rpc FlashUserStatus(FlashUserStatusReq) returns (FlashUserStatusResp);
 }
 
 message FindItemByIdsReq {
@@ -57,4 +57,13 @@ message DelFlashItemStockReq {
 
 message DelFlashItemStockResp {
 
+}
+
+message FlashUserStatusReq{
+  string Uid = 1;
+  string ItemId = 2;
+}
+
+message FlashUserStatusResp{
+  string Status = 1;
 }

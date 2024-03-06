@@ -40,6 +40,6 @@ const (
 	FalshEndNotDecut
 
 	// 秒杀商品超时时间
-	FalshTimeOut     = 1
+	FalshTimeOut     = 3
 	CacheFlashStatus = "item#flash"
 )

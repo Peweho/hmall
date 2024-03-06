@@ -19,6 +19,8 @@ type (
 	DelStockResp          = pb.DelStockResp
 	FindItemByIdsReq      = pb.FindItemByIdsReq
 	FindItemByIdsResp     = pb.FindItemByIdsResp
+	FlashUserStatusReq    = pb.FlashUserStatusReq
+	FlashUserStatusResp   = pb.FlashUserStatusResp
 	ItemDetail            = pb.ItemDetail
 	Items                 = pb.Items
 
@@ -28,6 +30,7 @@ type (
 		DelStockRollBack(ctx context.Context, in *DelStockReq, opts ...grpc.CallOption) (*DelStockResp, error)
 		// 秒杀商品服务
 		DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error)
+		FlashUserStatus(ctx context.Context, in *FlashUserStatusReq, opts ...grpc.CallOption) (*FlashUserStatusResp, error)
 	}
 
 	defaultItem struct {
@@ -60,4 +63,9 @@ func (m *defaultItem) DelStockRollBack(ctx context.Context, in *DelStockReq, opt
 func (m *defaultItem) DelFlashItemStock(ctx context.Context, in *DelFlashItemStockReq, opts ...grpc.CallOption) (*DelFlashItemStockResp, error) {
 	client := pb.NewItemClient(m.cli.Conn())
 	return client.DelFlashItemStock(ctx, in, opts...)
+}
+
+func (m *defaultItem) FlashUserStatus(ctx context.Context, in *FlashUserStatusReq, opts ...grpc.CallOption) (*FlashUserStatusResp, error) {
+	client := pb.NewItemClient(m.cli.Conn())
+	return client.FlashUserStatus(ctx, in, opts...)
 }

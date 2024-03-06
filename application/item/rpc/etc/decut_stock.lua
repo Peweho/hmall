@@ -18,9 +18,7 @@ repeat
     else
         -- 未获取到锁，等待重试
         retries = retries + 1
-        if retries <= maxRetries then
-            redis.call("SLEEP", retryInterval)
-        else
+        if retries > maxRetries then
             -- 达到最大重试次数，处理竞争情况
             print("达到最大重试次数,stock - ",ARGV[2])
         end

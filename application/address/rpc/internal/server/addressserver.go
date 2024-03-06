@@ -26,3 +26,8 @@ func (s *AddressServer) FindAdressById(ctx context.Context, in *service.FindAdre
 	l := logic.NewFindAdressByIdLogic(ctx, s.svcCtx)
 	return l.FindAdressById(in)
 }
+
+func (s *AddressServer) GetUserDefaultAddress(ctx context.Context, in *service.GetUserDefaultAddressReq) (*service.FindAdressByIdResp, error) {
+	l := logic.NewGetUserDefaultAddressLogic(ctx, s.svcCtx)
+	return l.GetUserDefaultAddress(in)
+}

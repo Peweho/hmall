@@ -5,6 +5,7 @@ option go_package="./service";
 
 service Address {
   rpc FindAdressById(FindAdressByIdReq) returns (FindAdressByIdResp);
+  rpc GetUserDefaultAddress(GetUserDefaultAddressReq) returns (FindAdressByIdResp);
 }
 
 message FindAdressByIdReq {
@@ -21,4 +22,8 @@ message FindAdressByIdResp {
   string City = 7;
   string Street = 8;
   string Town = 9;
+}
+
+message GetUserDefaultAddressReq {
+  int64 Uid = 1;
 }

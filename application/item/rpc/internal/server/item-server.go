@@ -42,3 +42,8 @@ func (s *ItemServer) DelFlashItemStock(ctx context.Context, in *pb.DelFlashItemS
 	l := logic.NewDelFlashItemStockLogic(ctx, s.svcCtx)
 	return l.DelFlashItemStock(in)
 }
+
+func (s *ItemServer) FlashUserStatus(ctx context.Context, in *pb.FlashUserStatusReq) (*pb.FlashUserStatusResp, error) {
+	l := logic.NewFlashUserStatusLogic(ctx, s.svcCtx)
+	return l.FlashUserStatus(in)
+}
