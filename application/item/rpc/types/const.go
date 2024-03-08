@@ -34,7 +34,8 @@ const (
 
 // 秒杀商品结果
 const (
-	FalshItemFail = iota
+	FalshItemMaxRetry = iota - 1
+	FalshItemFail
 	FalshItemSuccess
 )
 

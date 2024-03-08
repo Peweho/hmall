@@ -78,7 +78,7 @@ func (l *CreateFlashOrderLogic) CreateFlashOrder(req *types.CreateFlashOrdeReq) 
 				err := l.cretaOrder(req.ItemId, uid, req.Num)
 				return err
 			}
-		case <-time.After(types.FalshTimeOut * time.Second):
+		case <-time.After(time.Duration(l.svcCtx.Config.Timeout)):
 			//超时检查
 			userStatus, resp := l.svcCtx.ItemRPC.FlashUserStatus(l.ctx, &item.FlashUserStatusReq{
 				Uid:    strconv.Itoa(uid),
