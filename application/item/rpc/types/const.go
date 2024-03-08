@@ -2,11 +2,9 @@ package types
 
 // 缓存相关
 const (
-	CacheItemKey    = "cache#item"
-	CacheItemTime   = 3600
-	CacheItemFields = "fields"
-	CacheItemStock  = "stock"
-	CacheItemStatus = "status"
+	CacheItemKey  = "cache#item"
+	CacheItemTime = 3600
+
 	CacheStockLock  = "stockLock"
 	Luapath         = "./etc/decut_stock.lua"
 	LuapathRollBack = "./etc/decut_stock_roll_back.lua"
@@ -15,6 +13,18 @@ const (
 	CacheFlashStatus = "item#flash"
 	//秒杀重试次数
 	CacheFlashReTry = 5
+)
+
+// 商品缓存字段
+const (
+	CacheItemLockUils     = "lockUtil"
+	CacheItemLockUilsTime = 5   //ms
+	CacheItemDeadLine     = "0" //过期
+	CacheItemOwner        = "owner"
+	CacheItemUUID         = "uuid"
+	CacheItemFields       = "fields"
+	CacheItemStock        = "stock"
+	CacheItemStatus       = "status"
 )
 
 const (

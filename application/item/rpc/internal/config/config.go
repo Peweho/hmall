@@ -18,5 +18,9 @@ type Config struct {
 		Brokers []string
 		Topic   string
 	}
+	KqPusherCache struct {
+		Brokers []string
+		Topic   string
+	}
 	ItemNums uint
 }

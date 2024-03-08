@@ -25,6 +25,15 @@ func (m *ItemModel) FindItemByIds(ctx context.Context, ids []string) ([]ItemDTO,
 	return items, err
 }
 
+func (m *ItemModel) FindItemById(ctx context.Context, id string) (ItemDTO, error) {
+	var item ItemDTO
+	err := m.db.WithContext(ctx).
+		Omit(types.SelOmit).
+		Where("id = ? and status = ?", id, types.ItemStatusNormal).
+		First(&item).Error
+	return item, err
+}
+
 // 扣减库存
 func (m *ItemModel) DecutStock(ctx context.Context, id string, num int64) (*ItemDTO, error) {
 	var res ItemDTO

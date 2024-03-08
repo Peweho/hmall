@@ -14,6 +14,7 @@ type ServiceContext struct {
 	Db             *orm.DB
 	BizRedis       *redis.Redis
 	KqPusherSearch *kq.Pusher
+	KqPusherCache  *kq.Pusher
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -35,5 +36,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		ItemModel:      model.NewItemModel(db.DB),
 		BizRedis:       rds,
 		KqPusherSearch: kq.NewPusher(c.KqPusherSearch.Brokers, c.KqPusherSearch.Topic),
+		KqPusherCache:  kq.NewPusher(c.KqPusherCache.Brokers, c.KqPusherCache.Topic),
 	}
 }

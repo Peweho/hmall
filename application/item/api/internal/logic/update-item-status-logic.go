@@ -44,25 +44,17 @@ func (l *UpdateItemStatusLogic) UpdateItemStatus(req *types.UpdateItemStatusReq)
 		defer wg.Done()
 
 		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
-		err = l.svcCtx.BizRedis.Hset(key, types.CacheItemStatus, strconv.Itoa(req.Status))
-		if err != nil {
-			logx.Errorf("BizRedis.Set: %v, error: %v", key, err)
-
-			//缓存失败，进行补偿
-			cacheLogic := utils.NewPusherLogic(l.ctx, l.svcCtx)
-			//构造对象
-			msg := &utils.KqCacheMsg{
-				Code:  types.KqCacheStatus,
-				Stock: strconv.Itoa(req.Status),
-				Key:   key,
-			}
-
-			if errKq := cacheLogic.Pusher(msg); errKq != nil {
-				logx.Errorf("acheLogic.Pusher: %v, error: %v", msg, err)
-				panic(errKq)
-			}
+		cacheLogic := utils.NewPusherLogic(l.ctx, l.svcCtx)
+		//构造对象
+		msg := &utils.KqCacheMsg{
+			Code:   types.KqCacheStatus,
+			Status: strconv.Itoa(req.Status),
+			Key:    key,
 		}
-		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime)
+		if errKq := cacheLogic.Pusher(msg); errKq != nil {
+			logx.Errorf("acheLogic.Pusher: %v, error: %v", msg, err)
+			panic(errKq)
+		}
 	})
 
 	//同步es

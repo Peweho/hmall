@@ -3,9 +3,12 @@ package mqs
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/item/mq/internal/svc"
-	"hmall/application/item/rpc/types"
+	"hmall/application/item/mq/internal/types"
+	"strconv"
+	"time"
 )
 
 type PaymentSuccess struct {
@@ -44,7 +47,29 @@ func (l *PaymentSuccess) Consume(_, data string) error {
 		logx.Errorf(": %v, error； %v", data, err)
 		return err
 	}
+	//获取控制字段
+	cacheItem, _ := l.svcCtx.BizRedis.Hgetall(msg.Key)
+	_, ok := cacheItem[types.CacheItemFields]
+	lockUtils, ok := cacheItem[types.CacheItemLockUils]
 
+	//判断是否过期
+	if !ok || lockUtils != types.CacheItemDeadLine {
+		return nil
+	}
+
+	//写入控制信息
+	Uuid := uuid.New().String()
+	val := map[string]string{
+		types.CacheItemLockUils: strconv.FormatInt(time.Now().UnixMilli()+int64(types.CacheItemLockUilsTime), 10),
+		types.CacheItemOwner:    Uuid,
+	}
+	err := l.svcCtx.BizRedis.Hmset(msg.Key, val)
+	if err != nil {
+		logx.Errorf("BizRedis.Hmset: key=%v,value=%v,error: %v", msg.Key, val, err)
+		return err
+	}
+
+	//进行更新
 	switch msg.Code {
 	case KqCacheAll:
 		if err := l.CacheAll(msg); err != nil {
@@ -88,7 +113,6 @@ func (l *PaymentSuccess) CacheAll(msg *KqCacheMsg) error {
 		logx.Errorf("BizRedis.Hmset: %v, error: %v", msg.Key, err)
 		return err
 	}
-	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
 	return nil
 }
 
@@ -98,7 +122,6 @@ func (l *PaymentSuccess) CacheField(msg *KqCacheMsg) error {
 		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
 		return err
 	}
-	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
 	return nil
 }
 
@@ -108,7 +131,6 @@ func (l *PaymentSuccess) CacheStock(msg *KqCacheMsg) error {
 		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
 		return err
 	}
-	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
 	return nil
 }
 
@@ -118,7 +140,6 @@ func (l *PaymentSuccess) CacheStatus(msg *KqCacheMsg) error {
 		logx.Errorf("BizRedis.Hset: %v, error: %v", msg.Key, err)
 		return err
 	}
-	_ = l.svcCtx.BizRedis.Expire(msg.Key, types.CacheItemTime)
 	return nil
 }
 

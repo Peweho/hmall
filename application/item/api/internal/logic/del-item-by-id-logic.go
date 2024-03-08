@@ -42,15 +42,20 @@ func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
 	pusherSearch := utils.NewPusherSearchLogic(l.ctx, l.svcCtx)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(2)
 	//删除缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
 		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
-		_, err = l.svcCtx.BizRedis.Del(key)
-		if err != nil {
-			logx.Errorf("BizRedis.Del: %v,error: %v", key, err)
-			panic(err)
+		cacheLogic := utils.NewPusherLogic(l.ctx, l.svcCtx)
+		//构造对象
+		msg := &utils.KqCacheMsg{
+			Code: types.KqCacheDel,
+			Key:  key,
+		}
+		if errKq := cacheLogic.Pusher(msg); errKq != nil {
+			logx.Errorf("acheLogic.Pusher: %v, error: %v", msg, err)
+			panic(errKq)
 		}
 	})
 
@@ -64,12 +69,6 @@ func (l *DelItemByIdLogic) DelItemById(req *types.DelItemByIdReq) error {
 		}
 	})
 
-	//添加到布隆过滤器
-	threading.GoSafe(func() {
-		defer wg.Done()
-		err := l.Bloom.AddCtx(l.ctx, []byte(strconv.Itoa(req.Id)))
-		panic(err)
-	})
 	wg.Wait()
 	return nil
 }

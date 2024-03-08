@@ -4,9 +4,6 @@ package types
 const (
 	CacheItemKey           = "cache#item"
 	CacheItemTime          = 3600
-	CacheItemFields        = "fields"
-	CacheItemStock         = "stock"
-	CacheItemStatus        = "status"
 	CacheStockLock         = "stockLock"
 	Luapath                = "./etc/decut_stock.lua"
 	ItemBloomKey           = "itemBloom"
@@ -51,3 +48,14 @@ const (
 
 // 商品查询忽略字段
 const SelOmit = "create_time,update_time,creater,updater,status"
+
+// 商品缓存字段
+const (
+	CacheItemLockUils     = "lockUtil"
+	CacheItemLockUilsTime = 5   //ms
+	CacheItemDeadLine     = "0" //过期
+	CacheItemOwner        = "owner"
+	CacheItemFields       = "fields"
+	CacheItemStock        = "stock"
+	CacheItemStatus       = "status"
+)

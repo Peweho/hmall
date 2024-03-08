@@ -3,7 +3,7 @@ package logic
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/threading"
@@ -13,23 +13,27 @@ import (
 	"hmall/application/item/rpc/types"
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
+	"log"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type FindItemByIdsLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
-	Bloom *bloom.Filter
+	Bloom   *bloom.Filter
+	KqCache *PusherCacheLogic
 }
 
 func NewFindItemByIdsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FindItemByIdsLogic {
 	return &FindItemByIdsLogic{
-		ctx:    ctx,
-		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
-		Bloom:  bloom.New(svcCtx.BizRedis, types.ItemBloomKey, 20*svcCtx.Config.ItemNums),
+		ctx:     ctx,
+		svcCtx:  svcCtx,
+		Logger:  logx.WithContext(ctx),
+		Bloom:   bloom.New(svcCtx.BizRedis, types.ItemBloomKey, 20*svcCtx.Config.ItemNums),
+		KqCache: NewPusherCacheLogic(ctx, svcCtx),
 	}
 }
 
@@ -42,34 +46,25 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 
 	//2、查询缓存 并且 构造新的请求ids
 	wg := &sync.WaitGroup{}
-	newIds, err := l.ReadCache(&items, in.Ids, wg)
-	if err != nil {
-		return nil, err
-	}
+	for _, v := range in.Ids {
+		//布隆过滤器先过滤
+		exists, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
+		if !exists {
+			continue
+		}
 
+		wg.Add(1)
+		threading.GoSafe(func() {
+			defer wg.Done()
+			err := l.ReadCacheV2(&items, v)
+			log.Println(items)
+			if err != nil {
+				panic(err)
+			}
+		})
+	}
 	wg.Wait()
-	if len(newIds) == 0 {
-		return &pb.FindItemByIdsResp{Data: items}, nil
-	}
 
-	//2、查询数据
-	res, err := l.svcCtx.ItemModel.FindItemByIds(l.ctx, in.Ids)
-	if err != nil {
-		logx.Errorf("ItemModel.FindItemByIds: %v ,error: %v", in.Ids, err)
-		return nil, err
-	}
-
-	//3、写缓存
-	threading.NewWorkerGroup(func() {
-		_ = l.WriteCache(res)
-	}, 1).Start()
-
-	//4、类型转换
-	for _, v := range res {
-		items = append(items, ItemDTO_To_Item(v))
-	}
-
-	//5、返回响应
 	return &pb.FindItemByIdsResp{Data: items}, nil
 }
 
@@ -89,83 +84,109 @@ func ItemDTO_To_Item(item model.ItemDTO) *pb.Items {
 	}
 }
 
-// 构造对应的缓存键
-func CacheIds(id string) string {
-	return fmt.Sprintf("%s#%s", types.CacheItemKey, id)
-}
+// 读取一个缓存
+func (l *FindItemByIdsLogic) ReadCacheV2(items *[]*pb.Items, id string) error {
+	for {
+		key := util.CacheKey(types.CacheItemKey, id)
+		cacheItem, _ := l.svcCtx.BizRedis.Hgetall(key)
+		_, ok := cacheItem[types.CacheItemFields]
+		if ok {
+			//如果数据不为空，那么立即返回结果，并异步执行"取数据"
+			//取数据,mq实现
+			_ = l.KqCache.PusherCache(id)
+			//获取结果
+			l.getResult(items, cacheItem)
+			return nil
+		} else {
+			lockUtils, ok := cacheItem[types.CacheItemLockUils]
+			var (
+				now  int64
+				lock int64
+			)
+			if ok {
+				now = time.Now().UnixMilli()
+				lock, _ = strconv.ParseInt(lockUtils, 10, 64)
+			}
 
-// 读缓存
-func (l *FindItemByIdsLogic) ReadCache(items *[]*pb.Items, ids []string, wg *sync.WaitGroup) ([]string, error) {
-	newIds := make([]string, 0, len(ids))
-	for _, v := range ids {
-		key := util.CacheKey(types.CacheItemKey, v)
-
-		//使用布隆过滤器判断id是否存在于数据库
-		bloomOk, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
-		if !bloomOk {
-			continue
+			//没有锁、锁为过期标志、小于当前时间表示锁失效
+			if !ok || lockUtils == types.CacheItemDeadLine || lock < now {
+				err := l.updateCache(id, items)
+				return err
+			} else {
+				//如果数据为空，且被锁定，则睡眠100ms后，重新查询
+				time.Sleep(100 * time.Millisecond)
+			}
 		}
-
-		ok, _ := l.svcCtx.BizRedis.Exists(key)
-		if !ok {
-			//缓存不存在，将对应id存储到newIds中
-			newIds = append(newIds, v)
-			continue
-		}
-		wg.Add(1)
-		threading.GoSafe(func() {
-			defer wg.Done()
-			//判对应商品是存在，存在加入items
-			_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime) //设置有效期
-			cacheItem, _ := l.svcCtx.BizRedis.Hgetall(key)
-			var temp pb.Items
-			err := json.Unmarshal([]byte(cacheItem[types.CacheItemFields]), &temp)
-			if err != nil {
-				logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
-				panic(err)
-			}
-			//设置库存
-			stock, err := strconv.ParseInt(cacheItem[types.CacheItemStock], 10, 64)
-			if err != nil {
-				logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStock], err)
-				panic(err)
-			}
-			temp.Stock = int64(stock)
-
-			//设置状态
-			status, err := strconv.ParseInt(cacheItem[types.CacheItemStatus], 10, 64)
-			if err != nil {
-				logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStatus], err)
-				panic(err)
-			}
-			temp.Status = status
-			*items = append(*items, &temp)
-		})
 	}
-	return newIds, nil
 }
 
-// 写缓存
-func (l *FindItemByIdsLogic) WriteCache(items []model.ItemDTO) error {
-	for _, v := range items {
-		marshal, err := json.Marshal(v)
-		if err != nil {
-			logx.Errorf("json.Marshal: %v , error: ,%v", v, err)
-			return err
-		}
+// 取数据并获得结果
+func (l *FindItemByIdsLogic) updateCache(id string, items *[]*pb.Items) error {
+	key := util.CacheKey(types.CacheItemKey, id)
+	Uuid := uuid.New().String()
+	val := map[string]string{
+		types.CacheItemLockUils: strconv.FormatInt(time.Now().UnixMilli()+int64(types.CacheItemLockUilsTime), 10),
+		types.CacheItemOwner:    Uuid,
+	}
+	err := l.svcCtx.BizRedis.Hmset(key, val)
+	if err != nil {
+		logx.Errorf("BizRedis.Hmset: key=%v,value=%v,error: %v", key, val, err)
+		return err
+	}
 
-		key := util.CacheKey(types.CacheItemKey, strconv.FormatInt(v.Id, 10))
-		if err := l.svcCtx.BizRedis.Hmset(key, map[string]string{
+	//数据库查询
+	res, err := l.svcCtx.ItemModel.FindItemById(l.ctx, id)
+	if err != nil {
+		logx.Errorf("ItemModel.FindItemById: %v ,error: %v", id, err)
+		return err
+	}
+
+	*items = append(*items, ItemDTO_To_Item(res))
+
+	//写缓存
+	marshal, err := json.Marshal(res)
+	if err != nil {
+		logx.Errorf("json.Marshal: %v , error: ,%v", res, err)
+		return err
+	}
+
+	cacheItem, _ := l.svcCtx.BizRedis.Hgetall(key)
+	if cacheItem[types.CacheItemOwner] == Uuid {
+		set := map[string]string{
 			types.CacheItemFields: string(marshal),
-			types.CacheItemStatus: strconv.FormatInt(v.Status, 10),
-			types.CacheItemStock:  strconv.FormatInt(v.Stock, 10),
-		}); err != nil {
-			logx.Errorf("BizRedis.Hmset: %v, error: %v", key, err)
+			types.CacheItemStatus: strconv.FormatInt(res.Status, 10),
+			types.CacheItemStock:  strconv.FormatInt(res.Stock, 10),
 		}
-
-		//设置有效期
-		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime)
+		if err := l.svcCtx.BizRedis.Hmset(key, set); err != nil {
+			logx.Errorf("BizRedis.Hmset: key=%v,value=%v, error: %v", key, set, err)
+			return nil
+		}
 	}
-
 	return nil
+}
+
+// 获取结果
+func (l *FindItemByIdsLogic) getResult(items *[]*pb.Items, cacheItem map[string]string) {
+	var temp pb.Items
+	err := json.Unmarshal([]byte(cacheItem[types.CacheItemFields]), &temp)
+	if err != nil {
+		logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
+		panic(err)
+	}
+	//设置库存
+	stock, err := strconv.ParseInt(cacheItem[types.CacheItemStock], 10, 64)
+	if err != nil {
+		logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStock], err)
+		panic(err)
+	}
+	temp.Stock = stock
+
+	//设置状态
+	status, err := strconv.ParseInt(cacheItem[types.CacheItemStatus], 10, 64)
+	if err != nil {
+		logx.Errorf("strconv.ParseInt: %v , error: ,%v", cacheItem[types.CacheItemStatus], err)
+		panic(err)
+	}
+	temp.Status = status
+	*items = append(*items, &temp)
 }

@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/zeromicro/go-zero/core/threading"
 	utils "hmall/application/item/api/internal/util"
 	"hmall/pkg/util"
@@ -46,31 +45,12 @@ func (l *UpdateItemLogic) UpdateItem(req *types.ItemReqAndResp) error {
 	//写缓存
 	threading.GoSafe(func() {
 		defer wg.Done()
-		marshal, err := json.Marshal(item)
-		if err != nil {
-			logx.Errorf("json.Marshal: %v, error: %v", item, err)
-			panic(err)
-		}
-
 		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
-		err = l.svcCtx.BizRedis.Hset(key, types.CacheItemFields, string(marshal))
-		if err != nil {
-			logx.Errorf("BizRedis.Set: %v, error: %v", key, err)
-			//缓存失败，进行补偿
-			cacheLogic := utils.NewPusherLogic(l.ctx, l.svcCtx)
-			//构造对象
-			msg := &utils.KqCacheMsg{
-				Code:  types.KqCachePart,
-				Field: string(marshal),
-				Key:   key,
-			}
-
-			if errKq := cacheLogic.Pusher(msg); errKq != nil {
-				logx.Errorf("acheLogic.Pusher: %v, error: %v", msg, err)
-				panic(errKq)
-			}
+		err2 := l.svcCtx.BizRedis.Hset(key, types.CacheItemLockUils, types.CacheItemDeadLine)
+		if err2 != nil {
+			logx.Errorf("BizRedis.Hset: key=%v,field=%v,val=%v, error: %v", types.CacheItemLockUils, types.CacheItemDeadLine, err2)
+			panic(err2)
 		}
-		_ = l.svcCtx.BizRedis.Expire(key, types.CacheItemTime)
 	})
 
 	//同步es
