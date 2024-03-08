@@ -42,11 +42,12 @@ func (l *UpdateItemLogic) UpdateItem(req *types.ItemReqAndResp) error {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
-	//写缓存
+	//设置缓存过期
 	threading.GoSafe(func() {
 		defer wg.Done()
 		key := util.CacheKey(types.CacheItemKey, strconv.Itoa(req.Id))
 		err2 := l.svcCtx.BizRedis.Hset(key, types.CacheItemLockUils, types.CacheItemDeadLine)
+		_ = l.svcCtx.BizRedis.Expire(key, 10)
 		if err2 != nil {
 			logx.Errorf("BizRedis.Hset: key=%v,field=%v,val=%v, error: %v", types.CacheItemLockUils, types.CacheItemDeadLine, err2)
 			panic(err2)
