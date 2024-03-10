@@ -13,7 +13,6 @@ import (
 	"hmall/application/item/rpc/types"
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
-	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -42,11 +41,11 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 	if len(in.Ids) == 0 {
 		return nil, xcode.New(200, "ids为空")
 	}
-	items := make([]*pb.Items, 0, len(in.Ids))
+	items := make([]*model.ItemDTO, len(in.Ids), len(in.Ids)) //初始化数据，便于并发写入
 
 	//2、查询缓存 并且 构造新的请求ids
 	wg := &sync.WaitGroup{}
-	for _, v := range in.Ids {
+	for i, v := range in.Ids {
 		//布隆过滤器先过滤
 		exists, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
 		if !exists {
@@ -56,8 +55,7 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 		wg.Add(1)
 		threading.GoSafe(func() {
 			defer wg.Done()
-			err := l.ReadCacheV2(&items, v)
-			log.Println(items)
+			err := l.ReadCache(&items, v, i)
 			if err != nil {
 				panic(err)
 			}
@@ -65,7 +63,14 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 	}
 	wg.Wait()
 
-	return &pb.FindItemByIdsResp{Data: items}, nil
+	res := make([]*pb.Items, 0, len(in.Ids))
+	for _, v := range items {
+		if v == nil {
+			continue
+		}
+		res = append(res, ItemDTO_To_Item(*v))
+	}
+	return &pb.FindItemByIdsResp{Data: res}, nil
 }
 
 func ItemDTO_To_Item(item model.ItemDTO) *pb.Items {
@@ -85,7 +90,7 @@ func ItemDTO_To_Item(item model.ItemDTO) *pb.Items {
 }
 
 // 读取一个缓存
-func (l *FindItemByIdsLogic) ReadCacheV2(items *[]*pb.Items, id string) error {
+func (l *FindItemByIdsLogic) ReadCache(items *[]*model.ItemDTO, id string, pos int) error {
 	for {
 		key := util.CacheKey(types.CacheItemKey, id)
 		cacheItem, _ := l.svcCtx.BizRedis.Hgetall(key)
@@ -95,7 +100,7 @@ func (l *FindItemByIdsLogic) ReadCacheV2(items *[]*pb.Items, id string) error {
 			//取数据,mq实现
 			_ = l.KqCache.PusherCache(id)
 			//获取结果
-			l.getResult(items, cacheItem)
+			l.getResult(items, cacheItem, pos)
 			return nil
 		} else {
 			lockUtils, ok := cacheItem[types.CacheItemLockUils]
@@ -110,7 +115,7 @@ func (l *FindItemByIdsLogic) ReadCacheV2(items *[]*pb.Items, id string) error {
 
 			//没有锁、锁为过期标志、小于当前时间表示锁失效
 			if !ok || lockUtils == types.CacheItemDeadLine || lock < now {
-				err := l.updateCache(id, items)
+				err := l.updateCache(id, items, pos)
 				return err
 			} else {
 				//如果数据为空，且被锁定，则睡眠100ms后，重新查询
@@ -121,7 +126,7 @@ func (l *FindItemByIdsLogic) ReadCacheV2(items *[]*pb.Items, id string) error {
 }
 
 // 取数据并获得结果
-func (l *FindItemByIdsLogic) updateCache(id string, items *[]*pb.Items) error {
+func (l *FindItemByIdsLogic) updateCache(id string, items *[]*model.ItemDTO, pos int) error {
 	key := util.CacheKey(types.CacheItemKey, id)
 	Uuid := uuid.New().String()
 	val := map[string]string{
@@ -141,7 +146,7 @@ func (l *FindItemByIdsLogic) updateCache(id string, items *[]*pb.Items) error {
 		return err
 	}
 
-	*items = append(*items, ItemDTO_To_Item(res))
+	(*items)[pos] = &res
 
 	//写缓存
 	marshal, err := json.Marshal(res)
@@ -166,8 +171,8 @@ func (l *FindItemByIdsLogic) updateCache(id string, items *[]*pb.Items) error {
 }
 
 // 获取结果
-func (l *FindItemByIdsLogic) getResult(items *[]*pb.Items, cacheItem map[string]string) {
-	var temp pb.Items
+func (l *FindItemByIdsLogic) getResult(items *[]*model.ItemDTO, cacheItem map[string]string, pos int) {
+	var temp model.ItemDTO
 	err := json.Unmarshal([]byte(cacheItem[types.CacheItemFields]), &temp)
 	if err != nil {
 		logx.Errorf("json.Unmarshal: %v , error: ,%v", cacheItem, err)
@@ -188,5 +193,5 @@ func (l *FindItemByIdsLogic) getResult(items *[]*pb.Items, cacheItem map[string]
 		panic(err)
 	}
 	temp.Status = status
-	*items = append(*items, &temp)
+	(*items)[pos] = &temp
 }
