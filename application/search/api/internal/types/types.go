@@ -33,3 +33,11 @@ type SearchItemDTO struct {
 	Status       int64  `json:"status"`
 	Stock        int64  `json:"stock"`
 }
+
+type GetHotItemsReq struct {
+	Num int `form:"num"`
+}
+
+type GetHotItemsResp struct {
+	Items []SearchItemDTO `json:"items"`
+}

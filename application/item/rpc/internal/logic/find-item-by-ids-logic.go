@@ -6,13 +6,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/zeromicro/go-zero/core/bloom"
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/threading"
 	"hmall/application/item/rpc/internal/model"
 	"hmall/application/item/rpc/internal/svc"
 	"hmall/application/item/rpc/pb"
 	"hmall/application/item/rpc/types"
 	"hmall/pkg/util"
 	"hmall/pkg/xcode"
+	"log"
 	"strconv"
 	"sync"
 	"time"
@@ -47,19 +47,21 @@ func (l *FindItemByIdsLogic) FindItemByIds(in *pb.FindItemByIdsReq) (*pb.FindIte
 	wg := &sync.WaitGroup{}
 	for i, v := range in.Ids {
 		//布隆过滤器先过滤
-		exists, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
-		if !exists {
-			continue
-		}
+		//exists, _ := l.Bloom.ExistsCtx(l.ctx, []byte(v))
+		//if !exists {
+		//	continue
+		//}
 
 		wg.Add(1)
-		threading.GoSafe(func() {
+		go func(itemId string, pos int) {
 			defer wg.Done()
-			err := l.ReadCache(&items, v, i)
+			log.Println("i:", itemId, " v:", pos)
+			err := l.ReadCache(&items, itemId, pos)
 			if err != nil {
+				logx.Errorf("l.ReadCache: id=%v,pos=%v, error: %v", items, pos, err)
 				panic(err)
 			}
-		})
+		}(v, i)
 	}
 	wg.Wait()
 

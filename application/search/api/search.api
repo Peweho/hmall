@@ -33,6 +33,17 @@ type SearchItemDTO {
 	Stock        int64  `json:"stock"`
 }
 
+//热门商品
+type (
+	GetHotItemsReq {
+		Num int `form:"num"`
+	}
+
+	GetHotItemsResp {
+		Items []SearchItemDTO `json:"items"`
+	}
+)
+
 @server (
 	jwt : Auth
 	prefix :/search
@@ -41,4 +52,8 @@ type SearchItemDTO {
 service search-api {
 	@handler SearchList
 	get /list (SearchListReq) returns (SearchListResp)
+
+	@doc("查找热门商品")
+	@handler GetHotItems
+	get /hotItems (GetHotItemsReq) returns (GetHotItemsResp)
 }

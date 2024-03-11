@@ -9,6 +9,9 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"hmall/application/search/api/internal/svc"
 	"hmall/application/search/api/internal/types"
+	"hmall/pkg/util"
+	"log"
+	"strconv"
 	"strings"
 )
 
@@ -51,7 +54,7 @@ var query = map[string]any{
 }
 
 func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.SearchListResp, err error) {
-	//分类：存在直接精确匹配，不存在数据聚合
+	//确定分页大小
 	pageSize := req.PageSize
 	if req.PageSize == 0 {
 		pageSize = types.EsDefaultPageSize
@@ -71,35 +74,35 @@ func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.Sear
 				key := bucketMap["key"].(string)
 				query["query"].(map[string]any)["bool"].(map[string]any)["should"] = append(
 					query["query"].(map[string]any)["bool"].(map[string]any)["should"].([]map[string]any),
-					map[string]any{"term": map[string]any{"brand": map[string]any{"value": key}}})
+					map[string]any{"term": map[string]any{"Brand": map[string]any{"value": key}}})
 			}
 		}
 	} else {
 		query["query"].(map[string]any)["bool"].(map[string]any)["must"] = append(
 			query["query"].(map[string]any)["bool"].(map[string]any)["must"].([]map[string]any),
-			map[string]any{"term": map[string]any{"brand": req.Brand}})
+			map[string]any{"term": map[string]any{"Brand": req.Brand}})
 	}
 	//关键字
 	if req.Key != "" {
 		query["query"].(map[string]any)["bool"].(map[string]any)["must"] = append(
 			query["query"].(map[string]any)["bool"].(map[string]any)["must"].([]map[string]any),
-			map[string]any{"match": map[string]any{"name": req.Key}})
+			map[string]any{"match": map[string]any{"Name": req.Key}})
 
 		query["highlight"].(map[string]any)["fields"] = append(
 			query["highlight"].(map[string]any)["fields"].([]map[string]any),
-			map[string]any{"name": map[string]any{"pre_tags": "<em>", "post_tags": "</em>"}})
+			map[string]any{"Name": map[string]any{"pre_tags": "<em>", "post_tags": "</em>"}})
 	}
 	//分类
 	if req.Category != "" {
 		query["query"].(map[string]any)["bool"].(map[string]any)["filter"] = append(
 			query["query"].(map[string]any)["bool"].(map[string]any)["filter"].([]map[string]any),
-			map[string]any{"term": map[string]any{"category": map[string]any{"value": req.Category}}})
+			map[string]any{"term": map[string]any{"Category": map[string]any{"value": req.Category}}})
 	}
 	//价格
 	if req.MinPrice != 0 || req.MaxPrice != 0 {
 		query["query"].(map[string]any)["bool"].(map[string]any)["filter"] = append(
 			query["query"].(map[string]any)["bool"].(map[string]any)["filter"].([]map[string]any),
-			map[string]any{"range": map[string]any{"price": map[string]any{"gte": req.MinPrice, "lte": req.MaxPrice}}})
+			map[string]any{"range": map[string]any{"Price": map[string]any{"gte": req.MinPrice, "lte": req.MaxPrice}}})
 	}
 	//序列化query
 	marshal, err := json.Marshal(query)
@@ -107,7 +110,6 @@ func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.Sear
 		logx.Errorf("json.Marshal: %v, error: %v", query, err)
 		return nil, err
 	}
-
 	//向es发起请求
 	response, err := esapi.SearchRequest{
 		Index: []string{types.EsItemsIndex},
@@ -129,14 +131,27 @@ func (l *SearchListLogic) SearchList(req *types.SearchListReq) (resp *types.Sear
 		return nil, err
 	}
 
+	//获取用户id，用于创建用户搜索信息
+	uid, err := util.GetUsr(l.ctx, types.JwtKey)
+	if err != nil {
+		logx.Errorf("util.GetUsr, error: %v", err)
+		return nil, err
+	}
+
 	//构造返回对象
 	//1、商品
 	items := make([]types.SearchItemDTO, 0, len(res.Hits.HitDetails))
-	for i, _ := range res.Hits.HitDetails {
+	for _, v := range res.Hits.HitDetails {
 		if req.Key != "" {
-			res.Hits.HitDetails[i].Source.Name = res.Hits.HitDetails[i].Highlight.Name[0]
+			v.Source.Name = v.Highlight.Name[0] //处理高亮
 		}
-		items = append(items, res.Hits.HitDetails[i].Source)
+		items = append(items, v.Source)
+		_ = l.AddUserSearchInfo(&UserSearchInfo{
+			Uid:      strconv.Itoa(uid),
+			Brand:    v.Source.Brand,
+			ItemId:   strconv.FormatInt(v.Source.Id, 10),
+			Category: v.Source.Category,
+		})
 	}
 
 	return &types.SearchListResp{
@@ -183,6 +198,13 @@ type Highlight struct {
 	Name []string `json:"name"`
 }
 
+type UserSearchInfo struct {
+	Uid      string `json:"uid"`
+	Brand    string `json:"brand"`
+	Category string `json:"category"`
+	ItemId   string `json:"item_id"`
+}
+
 func (l *SearchListLogic) BrandAggregation(category string) (*[]any, error) {
 	BrandAggregation := `{
 				"query": {
@@ -227,4 +249,42 @@ func (l *SearchListLogic) BrandAggregation(category string) (*[]any, error) {
 	buckets := categoryAgg["buckets"].([]interface{})
 
 	return &buckets, nil
+}
+
+func (l *SearchListLogic) AddUserSearchInfo(info *UserSearchInfo) error {
+	marshal, _ := json.Marshal(info)
+	resp, err := esapi.CreateRequest{
+		Index:      types.EsUserSearchInfoIndex,
+		Body:       bytes.NewReader(marshal),
+		DocumentID: info.Uid + "_" + info.ItemId,
+	}.Do(l.ctx, l.svcCtx.Es)
+	if err != nil {
+		logx.Errorf("esapi.CreateRequest: %v, error: %v", string(marshal), err)
+		return err
+	}
+	log.Println("AddUserSearchInfo:", resp.String())
+	return nil
+}
+
+// 数据库导入es
+func (l *SearchListLogic) DatabasesToEs() error {
+	item, err := l.svcCtx.ItemModel.FindItem(l.ctx, 1000, 0)
+	if err != nil {
+		logx.Errorf("ItemModel.FindItem, error:", err)
+		return err
+	}
+
+	for _, v := range item {
+		marshal, _ := json.Marshal(v)
+		_, err := esapi.CreateRequest{
+			Index:      types.EsItemsIndex,
+			DocumentID: strconv.FormatInt(v.Id, 10),
+			Body:       bytes.NewReader(marshal),
+		}.Do(context.Background(), l.svcCtx.Es)
+		if err != nil {
+			logx.Errorf("esapi.CreateRequest: %v, error: %v", string(marshal), err)
+			return err
+		}
+	}
+	return nil
 }
