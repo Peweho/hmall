@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"bufio"
 	"context"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/mr"
@@ -11,8 +10,6 @@ import (
 	"hmall/application/item/api/internal/types"
 	utils "hmall/application/item/api/internal/util"
 	"hmall/pkg/util"
-	"io"
-	"os"
 	"strconv"
 	"sync"
 )
@@ -35,6 +32,15 @@ type Order struct {
 	ItemId int
 	Num    int
 }
+
+var decut_lua = `
+	local acquired = redis.call("exist",KEYS[2])
+	if acquired == 1 then
+		local stock = redis.call("HGET",KEYS[2],KEYS[3])
+		redis.call("HSET",KEYS[2],KEYS[3],stock - ARGV[2])
+		redis.call("EXPIRE",KEYS[2],ARGV[3])
+	end
+`
 
 func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 	// 1、校验参数
@@ -80,24 +86,16 @@ func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 				itemId := strconv.FormatInt(newItem.Id, 10)
 				lockKey := util.CacheKey(types.CacheStockLock, itemId)
 				key := util.CacheKey(types.CacheItemKey, itemId)
-				exists, _ := l.svcCtx.BizRedis.Exists(key)
-				//缓存存在，更新缓存
-				if exists {
-					//读取lua脚本
-					luaScript, err := ReadLua()
-					if err != nil {
-						panic(err)
-					}
-					// 执行Lua脚本
-					_, err = l.svcCtx.BizRedis.Eval(luaScript, []string{
-						lockKey,
-						key,
-						types.CacheItemStock,
-					}, itemId, strconv.Itoa(stock), types.CacheItemTime)
-					if err != nil && err.Error() != "redis: nil" {
-						logx.Errorf("BizRedis.Eval, error: %v", err)
-						cancel(err)
-					}
+
+				// 执行Lua脚本
+				_, err := l.svcCtx.BizRedis.Eval(decut_lua, []string{
+					lockKey,
+					key,
+					types.CacheItemStock,
+				}, itemId, strconv.Itoa(stock), types.CacheItemTime)
+				if err != nil && err.Error() != "redis: nil" {
+					logx.Errorf("BizRedis.Eval, error: %v", err)
+					cancel(err)
 				}
 			})
 
@@ -120,25 +118,4 @@ func (l *DeductItemsLogic) DeductItems(req *types.DeductItemsReq) error {
 	}
 	//4、返回
 	return nil
-}
-
-func ReadLua() (string, error) {
-	//打开脚本
-	file, err := os.Open(types.Luapath)
-	if err != nil {
-		logx.Errorf("os.Open: %v,error: %v", types.Luapath, err)
-		return "", err
-	}
-	reader := bufio.NewReader(file)
-	var luaScript string
-	//逐行读取
-	for {
-		line, err := reader.ReadString('\n')
-		luaScript += line
-		if err == io.EOF {
-			break
-		}
-	}
-
-	return luaScript, nil
 }

@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: address-api
+  namespace: hmall
+  labels:
+    app: address-api
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: address-api
+  template:
+    metadata:
+      labels:
+        app: address-api
+    spec:
+      serviceAccountName: find-endpoints
+      containers:
+      - name: address-api
+        image: registry.cn-hangzhou.aliyuncs.com/go-zero_hmall/address-api:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8885
+        readinessProbe:
+          tcpSocket:
+            port: 8885
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 8885
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1024Mi
+        volumeMounts:
+        - name: timezone
+          mountPath: /etc/localtime
+      imagePullSecrets:
+      - name: 258147Pwh
+      volumes:
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: address-api-svc
+  namespace: hmall
+spec:
+  ports:
+  - port: 8885
+    targetPort: 8885
+  selector:
+    app: address-api
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: address-api-hpa-c
+  namespace: hmall
+  labels:
+    app: address-api-hpa-c
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: address-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: address-api-hpa-m
+  namespace: hmall
+  labels:
+    app: address-api-hpa-m
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: address-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
